@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "omarchy_hw_monitor",
+  "project_id": "81a9e8df-36de-4846-9285-b2a63ad722ac"
+}

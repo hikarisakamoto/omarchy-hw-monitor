@@ -10,10 +10,14 @@ import "Model.js" as Model
 // interval is affordable inside the shell process instead of forking a script
 // the way a Waybar module would. Two documented exceptions fork helpers:
 // `nvidia-smi` on the sample interval (NVIDIA cards expose no sysfs telemetry)
-// and `proc_top.py` up to every 3 s, only while the system panel is open.
+// and `proc_top.py` up to every 3 s, only while the system panel is open and
+// its top-processes section is shown.
 //
 // One instance exists per monitor, since the bar mounts a widget per screen.
-// The reads are cheap enough that this is not worth coordinating.
+// For the virtual-file reads that is cheap enough not to coordinate, but the
+// forks are duplicated too: every shown screen runs its own `hw-probe` at
+// startup and, on an NVIDIA machine, its own `nvidia-smi` each tick. A screen
+// the `monitors` setting hides runs neither.
 Item {
   id: root
 

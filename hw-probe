@@ -22,17 +22,14 @@ read_first() {
 }
 
 # JSON string escaping. Sensor and PCI names come from the kernel and lspci,
-# so backslashes and quotes are unlikely but not impossible. Control
-# characters (any C0 byte: CR, newline, ESC, ...) are stripped entirely and
-# tabs become spaces, so the payload is always one clean JSON line — the
-# consumer degrades to defaults on invalid JSON rather than misparsing.
+# so backslashes and quotes are unlikely but not impossible. Backslash and
+# quote are escaped, a tab becomes a space, and every other control byte (C0
+# and DEL) is dropped, so the payload is always one clean JSON line rather
+# than relying on the consumer's fallback for invalid JSON.
 json_str() {
   local s=${1//\\/\\\\}
   s=${s//\"/\\\"}
-  s=${s//	/ }
-  # Any remaining C0 control (CR, newline, ESC, ...) would produce invalid
-  # one-line JSON; the consumer degrades to defaults on invalid JSON rather
-  # than misparsing, but there is no reason to emit it in the first place.
+  s=${s//$'\t'/ }
   s=${s//[[:cntrl:]]/}
   printf '"%s"' "$s"
 }

@@ -35,14 +35,15 @@ Nothing to configure — it finds this machine's sensors on its own.
 
 Clicking the widget opens an Omarchy keyboard-driven popup panel anchored to the bar:
 
-- **Hero summary & Unit Toggle** — core/thread count, GPU summary, and a live toggle switch between **°C** and **°F** at the top right.
+- **Header** — the CPU model, and a gear button (or `s`) that opens the settings drawer.
+- **Settings drawer** — chips for the bar readout mode, which items are shown (GPU, CPU, CPU and GPU temperature, RAM, clocks, gauges), RAM format, **°C**/**°F**, and temperature format. Each pick is saved to this widget's entry in `shell.json` at once. The drawer covers the common choices; every key is in [Settings](#settings).
 - **Telemetry dials** — 270° circular gauges with live figures for CPU load & temp, RAM usage, and GPU load & temp with dynamic temperature coloring.
 - **60s CPU load sparkline** — live history trend buffer sampled while open (zero background cost when closed).
 - **Processor details** — full CPU model name (without cutoff), load, clock frequency, dynamic temperature color, and 1m/5m/15m load average meters.
 - **Memory breakdown** — used/total GiB visual meter, available, cache, and swap usage.
 - **Top processes** — the top processes sorted by RAM or CPU (switch in the header), with share and CPU% per process, blue ramp bars toward the theme accent. The Group toggle collapses them per application (systemd scope, name fallback) with counts and sums. Sampled only while the panel is open (zero cost while closed).
 - **Graphics metrics** — full GPU card name, load, dynamic temperature color, VRAM meter, power draw (W), fan RPM, and clock speeds.
-- **Keyboard navigation** — `Escape` to close, `Tab`/`Shift+Tab` to switch panels, `r` to resample, `c`/`f` to toggle °C/°F.
+- **Keyboard navigation** — `Escape` to close, `Tab`/`Shift+Tab` to switch panels, `r` to resample, `c`/`f` to toggle °C/°F, `s` to open or close the settings drawer.
 
 ### The four bar readouts
 

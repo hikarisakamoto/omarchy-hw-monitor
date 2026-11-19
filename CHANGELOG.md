@@ -82,8 +82,14 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 ### Fixed
 
 - Every NVIDIA card is listed, so `gpu` can select a second one.
-- AMD cards without a marketing name in `pci.ids` are named from their device
-  entry instead of "AMD/ATI", which also makes them selectable by name.
+- A GPU whose `pci.ids` entry has no bracketed marketing name is named from
+  that entry alone. Such AMD cards (Phoenix1, Lucienne...) were all named
+  "AMD/ATI" and can now be told apart and selected by name; such Intel and
+  nouveau cards drop the "Intel Corporation" or "NVIDIA Corporation" prefix. A
+  `gpu` value that matched only the old name, such as `"ati"` or `"intel"`, no
+  longer matches that card and, like any unmatched value, falls back to
+  `"auto"`: select the card by its id (`"card0"`), its position or its new
+  name instead.
 - A sensor file whose only line has no trailing newline is read instead of
   skipped.
 - Until the probe answers, the CPU has no placeholder "CPU" model name, so the

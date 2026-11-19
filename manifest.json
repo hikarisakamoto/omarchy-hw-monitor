@@ -278,7 +278,7 @@
         "max": 360,
         "step": 1,
         "defaultValue": 0,
-        "description": "Rotate the GPU load and GPU temperature glyphs (0, 90, 180, 270)."
+        "description": "Rotate the GPU glyph (0, 90, 180, 270). The GPU temperature glyph has its own setting, gpuTempIconRotation."
       },
       {
         "key": "cpuIconRotation",

@@ -182,9 +182,13 @@ Item {
                          "--id=" + String(gpuInfo.index !== undefined ? gpuInfo.index : 0)])
   }
 
+  // A run that failed, printed an error instead of CSV, or was killed before
+  // writing anything blanks the readout instead of freezing the last values
+  // as if they were live (driver/library mismatch after an update, "GPU has
+  // fallen off the bus" after suspend, a wedged nvidia-smi).
   function applyNvidia(raw) {
     var sample = Model.parseNvidia(raw)
-    if (!sample) return
+      || { busy: -1, tempC: -1, watts: -1, vramUsedBytes: -1, vramTotalBytes: -1 }
     gpuPercent = sample.busy
     gpuTempC = sample.tempC
     gpuWatts = sample.watts
@@ -265,7 +269,10 @@ Item {
     byteCap: Model.HELPER_MAX_CHARS
     onFinished: function(text) {
       if (root._destroyed) return
-      root.probe = Model.parseProbe(text)
+      // A re-probe (the widget re-shown) that fails or prints nothing usable
+      // keeps the last good discovery instead of dropping every sensor.
+      var parsed = Model.parseProbe(text)
+      if (parsed.ok || !root.probe.ok) root.probe = parsed
       // Sensor paths only become known here, so take the first real sample
       // once they land instead of waiting out a whole interval.
       root.sample()

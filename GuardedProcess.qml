@@ -15,9 +15,12 @@ import Quickshell.Io
 //   crossing the cap always means a runaway or tampered helper.
 //
 // StdioCollector.text still holds the PREVIOUS run's output until this run
-// writes its first byte, so the byte guard measures stdout against the length
-// recorded at spawn: without that baseline a slow-first-byte run would be
-// killed for the last run's size. stderr counts toward the cap too.
+// writes its first byte (verified on Quickshell 0.3.2, for a run that writes
+// nothing and for one killed first). So the byte guard measures stdout
+// against the length recorded at spawn (without that baseline a
+// slow-first-byte run would be killed for the last run's size), and
+// `finished` hands a run that wrote nothing "" rather than replaying the last
+// run's output as if it were new. stderr counts toward the cap too.
 Item {
   id: guard
 
@@ -27,7 +30,7 @@ Item {
 
   readonly property bool running: proc.running
 
-  // Stdout closed; `text` is what the collector holds.
+  // Stdout closed; `text` is this run's output, or "" if it wrote none.
   signal finished(string text)
   // The watchdog fired and the run is being terminated.
   signal timedOut()
@@ -37,12 +40,15 @@ Item {
   // Teardown veto: once set, no timer or handler touches anything again.
   property bool _destroyed: false
   property int _base: 0
+  // Whether this run has written to stdout; dataChanged fires only for it.
+  property bool _fresh: false
 
   // Start a run unless one is still in flight. Returns whether it started.
   function spawn(command) {
     if (_destroyed || proc.running) return false
     proc.command = command
     _base = String(out.text).length
+    _fresh = false
     watchdog.restart()
     proc.running = true
     return true
@@ -73,7 +79,8 @@ Item {
     stdout: StdioCollector {
       id: out
       waitForEnd: false
-      onStreamFinished: if (!guard._destroyed) guard.finished(text)
+      onDataChanged: guard._fresh = true
+      onStreamFinished: if (!guard._destroyed) guard.finished(guard._fresh ? text : "")
     }
     stderr: StdioCollector {
       id: err

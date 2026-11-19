@@ -15,8 +15,8 @@ Item {
 
   property real ratio: 0
   property color fillColor: Color.foreground
-  property color trackColor: Qt.rgba(fillColor.r, fillColor.g, fillColor.b, 0.14)
-  property color borderColor: Qt.rgba(fillColor.r, fillColor.g, fillColor.b, 0.4)
+  property color trackColor: Qt.alpha(fillColor, 0.14)
+  property color borderColor: Qt.alpha(fillColor, 0.4)
   // Set while the reading is past its critical threshold. A blurred copy of the
   // fill underneath makes a full gauge catch the eye in peripheral vision,
   // which is the whole point of having it there.

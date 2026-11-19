@@ -38,7 +38,8 @@ KeyboardPanel {
 
   readonly property color baseColor: root.bar ? root.bar.foreground : Color.foreground
   readonly property color hotColor: root.bar ? root.bar.urgent : Color.urgent
-  readonly property color dimColor: Qt.darker(baseColor, 1.45)
+  // Captions, labels and idle readings.
+  readonly property color mutedColor: Qt.darker(baseColor, 1.4)
   readonly property string fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
 
   // One severity and one warmed colour per load figure, so the dial, the
@@ -53,7 +54,7 @@ KeyboardPanel {
   // Dim up to warnTempC, then warming toward urgent at criticalTempC, the
   // same ramp the bar uses. A missing reading (-1) stays dim.
   function tempColor(tempC) {
-    return Model.mixColor(dimColor, hotColor, Model.severity(tempC, warnTempC, criticalTempC))
+    return Model.mixColor(mutedColor, hotColor, Model.severity(tempC, warnTempC, criticalTempC))
   }
 
   // Ring buffer for the last 60 seconds of CPU samples.
@@ -205,7 +206,7 @@ KeyboardPanel {
                 width: parent.width
                 wrapMode: Text.Wrap
                 text: hw.cpuInfo && hw.cpuInfo.model ? hw.cpuInfo.model : "System Telemetry"
-                color: root.dimColor
+                color: root.mutedColor
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.caption
                 font.bold: true
@@ -230,8 +231,8 @@ KeyboardPanel {
           visible: root.settingsOpen || height > 0
           height: root.settingsOpen ? settingsCol.implicitHeight + Style.space(20) : 0
           clip: true
-          color: Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0.05)
-          border.color: Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0.14)
+          color: Qt.alpha(root.baseColor, 0.05)
+          border.color: Qt.alpha(root.baseColor, 0.14)
           border.width: 1
           radius: Style.cornerRadius
 
@@ -285,7 +286,7 @@ KeyboardPanel {
                 width: Style.space(48)
                 anchors.verticalCenter: parent.verticalCenter
                 text: "Mode"
-                color: Qt.darker(root.baseColor, 1.4)
+                color: root.mutedColor
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.caption
                 font.bold: true
@@ -327,7 +328,7 @@ KeyboardPanel {
                 width: Style.space(48)
                 anchors.verticalCenter: parent.verticalCenter
                 text: "Show"
-                color: Qt.darker(root.baseColor, 1.4)
+                color: root.mutedColor
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.caption
                 font.bold: true
@@ -384,7 +385,7 @@ KeyboardPanel {
                 width: Style.space(48)
                 anchors.verticalCenter: parent.verticalCenter
                 text: "RAM"
-                color: Qt.darker(root.baseColor, 1.4)
+                color: root.mutedColor
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.caption
                 font.bold: true
@@ -426,7 +427,7 @@ KeyboardPanel {
                 width: Style.space(48)
                 anchors.verticalCenter: parent.verticalCenter
                 text: "Unit"
-                color: Qt.darker(root.baseColor, 1.4)
+                color: root.mutedColor
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.caption
                 font.bold: true
@@ -458,7 +459,7 @@ KeyboardPanel {
                 width: Style.space(48)
                 anchors.verticalCenter: parent.verticalCenter
                 text: "Temp"
-                color: Qt.darker(root.baseColor, 1.4)
+                color: root.mutedColor
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.caption
                 font.bold: true
@@ -519,7 +520,6 @@ KeyboardPanel {
             title: "RAM"
             valueText: hw.memPercent >= 0 ? Math.round(hw.memPercent) + "%" : "–"
             subText: hw.memory ? (Model.formatGib(Model.gibFromKib(hw.memory.usedKib)) + "/" + Model.formatGib(Model.gibFromKib(hw.memory.totalKib)) + "G") : ""
-            subTextColor: root.dimColor
             ratio: hw.memPercent >= 0 ? hw.memPercent / 100 : 0
             baseColor: root.baseColor
             hotColor: root.hotColor
@@ -548,8 +548,8 @@ KeyboardPanel {
         Rectangle {
           width: parent.width
           implicitHeight: sparklineCol.implicitHeight + Style.space(24)
-          color: Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0.04)
-          border.color: Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0.10)
+          color: Qt.alpha(root.baseColor, 0.04)
+          border.color: Qt.alpha(root.baseColor, 0.10)
           border.width: 1
           radius: Style.cornerRadius
 
@@ -597,21 +597,21 @@ KeyboardPanel {
                 anchors.right: parent.right
                 y: parent.height * 0.25
                 height: 1
-                color: Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0.08)
+                color: Qt.alpha(root.baseColor, 0.08)
               }
               Rectangle {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 y: parent.height * 0.50
                 height: 1
-                color: Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0.08)
+                color: Qt.alpha(root.baseColor, 0.08)
               }
               Rectangle {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 y: parent.height * 0.75
                 height: 1
-                color: Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0.08)
+                color: Qt.alpha(root.baseColor, 0.08)
               }
 
               // Sparkline fill area
@@ -624,7 +624,7 @@ KeyboardPanel {
                 ShapePath {
                   strokeWidth: 0
                   strokeColor: "transparent"
-                  fillColor: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.18)
+                  fillColor: Qt.alpha(Color.accent, 0.18)
 
                   startX: root.sparklineFirst.x
                   startY: root.sparklineFirst.y
@@ -665,8 +665,8 @@ KeyboardPanel {
         Rectangle {
           width: parent.width
           implicitHeight: procCol.implicitHeight + Style.space(24)
-          color: Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0.04)
-          border.color: Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0.10)
+          color: Qt.alpha(root.baseColor, 0.04)
+          border.color: Qt.alpha(root.baseColor, 0.10)
           border.width: 1
           radius: Style.cornerRadius
 
@@ -744,7 +744,7 @@ KeyboardPanel {
               Text {
                 textFormat: Text.PlainText
                 text: "Load Average (1m · 5m · 15m)"
-                color: Qt.darker(root.baseColor, 1.4)
+                color: root.mutedColor
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.caption
                 font.bold: true
@@ -797,8 +797,8 @@ KeyboardPanel {
         Rectangle {
           width: parent.width
           implicitHeight: memCol.implicitHeight + Style.space(24)
-          color: Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0.04)
-          border.color: Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0.10)
+          color: Qt.alpha(root.baseColor, 0.04)
+          border.color: Qt.alpha(root.baseColor, 0.10)
           border.width: 1
           radius: Style.cornerRadius
 
@@ -843,7 +843,7 @@ KeyboardPanel {
                 Text {
                   textFormat: Text.PlainText
                   text: "RAM Usage"
-                  color: Qt.darker(root.baseColor, 1.4)
+                  color: root.mutedColor
                   font.family: root.fontFamily
                   font.pixelSize: Style.font.caption
                   font.bold: true
@@ -868,7 +868,7 @@ KeyboardPanel {
                 width: parent.width
                 height: Style.space(6)
                 radius: height / 2
-                color: Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0.12)
+                color: Qt.alpha(root.baseColor, 0.12)
 
                 Rectangle {
                   anchors.left: parent.left
@@ -922,8 +922,8 @@ KeyboardPanel {
         Rectangle {
           width: parent.width
           implicitHeight: topProcCol.implicitHeight + Style.space(24)
-          color: Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0.04)
-          border.color: Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0.10)
+          color: Qt.alpha(root.baseColor, 0.04)
+          border.color: Qt.alpha(root.baseColor, 0.10)
           border.width: 1
           radius: Style.cornerRadius
           visible: root.showTopProcs
@@ -1000,7 +1000,7 @@ KeyboardPanel {
                   if (h.procTopTime === "") return metric
                   return metric + " \u00b7 " + h.procTopTime
                 }
-                color: Qt.darker(root.baseColor, 1.4)
+                color: root.mutedColor
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.caption
                 font.bold: true
@@ -1078,7 +1078,7 @@ KeyboardPanel {
                     width: parent.width
                     height: Style.space(5)
                     radius: height / 2
-                    color: Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0.12)
+                    color: Qt.alpha(root.baseColor, 0.12)
 
                     Rectangle {
                       anchors.left: parent.left
@@ -1100,7 +1100,7 @@ KeyboardPanel {
               width: parent.width
               wrapMode: Text.Wrap
               text: hw.procTopFailed ? "Dati processi non disponibili (python3 assente o lettura fallita)." : "Raccolta dati processi\u2026"
-              color: Qt.darker(root.baseColor, 1.4)
+              color: root.mutedColor
               font.family: root.fontFamily
               font.pixelSize: Style.font.caption
             }
@@ -1111,8 +1111,8 @@ KeyboardPanel {
         Rectangle {
           width: parent.width
           implicitHeight: gpuCol.implicitHeight + Style.space(24)
-          color: Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0.04)
-          border.color: Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0.10)
+          color: Qt.alpha(root.baseColor, 0.04)
+          border.color: Qt.alpha(root.baseColor, 0.10)
           border.width: 1
           radius: Style.cornerRadius
           visible: hw.hasGpu
@@ -1160,7 +1160,7 @@ KeyboardPanel {
                 Text {
                   textFormat: Text.PlainText
                   text: "VRAM"
-                  color: Qt.darker(root.baseColor, 1.4)
+                  color: root.mutedColor
                   font.family: root.fontFamily
                   font.pixelSize: Style.font.caption
                   font.bold: true
@@ -1185,7 +1185,7 @@ KeyboardPanel {
                 width: parent.width
                 height: Style.space(6)
                 radius: height / 2
-                color: Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0.12)
+                color: Qt.alpha(root.baseColor, 0.12)
 
                 Rectangle {
                   anchors.left: parent.left
@@ -1248,8 +1248,8 @@ KeyboardPanel {
     implicitWidth: chipLabel.implicitWidth + Style.space(12)
     implicitHeight: chipLabel.implicitHeight + Style.space(8)
     radius: Style.cornerRadius
-    color: chip.selected ? activeColor : (chipMouse.containsMouse ? Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0.12) : Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0.06))
-    border.color: chip.selected ? activeColor : Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0.12)
+    color: chip.selected ? activeColor : (chipMouse.containsMouse ? Qt.alpha(root.baseColor, 0.12) : Qt.alpha(root.baseColor, 0.06))
+    border.color: chip.selected ? activeColor : Qt.alpha(root.baseColor, 0.12)
     border.width: 1
 
     Behavior on color { ColorAnimation { duration: 140 } }
@@ -1290,7 +1290,7 @@ KeyboardPanel {
     Text {
       textFormat: Text.PlainText
       text: infoPairRoot.label
-      color: Qt.darker(root.baseColor, 1.4)
+      color: root.mutedColor
       font.family: root.fontFamily
       font.pixelSize: Style.font.bodySmall
       font.bold: true
@@ -1352,7 +1352,7 @@ KeyboardPanel {
       width: parent.width
       height: Style.space(4)
       radius: height / 2
-      color: Qt.rgba(meterRoot.baseColor.r, meterRoot.baseColor.g, meterRoot.baseColor.b, 0.12)
+      color: Qt.alpha(meterRoot.baseColor, 0.12)
 
       Rectangle {
         anchors.left: parent.left

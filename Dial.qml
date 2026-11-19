@@ -19,8 +19,10 @@ Item {
   property color accentColor: Color.accent
   property color hotColor: Color.urgent
   property color valueColor: Model.mixColor(accentColor, hotColor, severity)
-  property color subTextColor: Qt.darker(baseColor, 1.4)
-  property color trackColor: Qt.rgba(baseColor.r, baseColor.g, baseColor.b, 0.14)
+  // Title and default sub-text tone.
+  readonly property color mutedColor: Qt.darker(baseColor, 1.4)
+  property color subTextColor: mutedColor
+  property color trackColor: Qt.alpha(baseColor, 0.14)
   property real diameter: Style.space(108)
   property real arcWidth: Math.max(3, Style.space(4))
   property string fontFamily: Style.font.family
@@ -63,7 +65,7 @@ Item {
     // Under-glow for the active value arc
     ShapePath {
       strokeWidth: root.arcWidth * 2.5
-      strokeColor: root.arcVisible ? Qt.rgba(root.valueColor.r, root.valueColor.g, root.valueColor.b, 0.18) : "transparent"
+      strokeColor: root.arcVisible ? Qt.alpha(root.valueColor, 0.18) : "transparent"
       fillColor: "transparent"
       capStyle: ShapePath.RoundCap
 
@@ -107,7 +109,7 @@ Item {
       font.pixelSize: Style.font.caption
       font.bold: true
       font.letterSpacing: 1.1
-      color: Qt.darker(root.baseColor, 1.4)
+      color: root.mutedColor
     }
 
     Text {

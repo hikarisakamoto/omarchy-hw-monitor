@@ -6,7 +6,7 @@
   "version": "1.2.1",
   "author": "meviusisback (original by Edgar Silva)",
   "license": "MIT",
-  "description": "GPU, CPU, temperature, and RAM in the bar as sleek icon + figure readouts, with a first-class visual system panel including top processes by RAM.",
+  "description": "GPU, CPU, temperature, and RAM in the bar as sleek icon + figure readouts, with a first-class visual system panel listing top processes by RAM or CPU, grouped by app.",
   "repository": "https://github.com/meviusisback/omarchy-hw-monitor",
   "kinds": [
     "bar-widget"
@@ -16,7 +16,7 @@
   },
   "barWidget": {
     "displayName": "Hardware Monitor",
-    "description": "GPU, CPU, temperature, and RAM load as sleek icon readouts, vertical gauges, or spelled out words. Left click opens the system telemetry panel with top processes by RAM.",
+    "description": "GPU, CPU, temperature, and RAM load as sleek icon readouts, vertical gauges, or spelled out words. Left click opens the system telemetry panel with top processes by RAM or CPU.",
     "category": "System",
     "allowMultiple": true,
     "defaultSection": "right",
@@ -120,7 +120,7 @@
         "type": "boolean",
         "label": "Show top processes",
         "defaultValue": true,
-        "description": "Show the top processes by RAM in the system panel (sampled only while the panel is open)."
+        "description": "Show the top-processes section in the system panel (sampled only while the panel is open)."
       },
       {
         "key": "topProcCount",

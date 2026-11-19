@@ -325,14 +325,6 @@ function formatPercent(value) {
   return Math.round(value) + "%"
 }
 
-// A leading zero rather than a leading space: same constant width, but the
-// figure still starts where the eye expects it to, hard against its label.
-function formatPercentPadded(value) {
-  if (!isFinite(value) || value < 0) return "–"
-  var n = Math.round(value)
-  return (n < 10 ? "0" + n : String(n)) + "%"
-}
-
 // Just the figure, for callers that want to choose their own unit marker.
 function tempNumber(celsius, fahrenheit) {
   if (!isFinite(celsius) || celsius <= 0) return "–"
@@ -340,20 +332,19 @@ function tempNumber(celsius, fahrenheit) {
 }
 
 function formatTemp(celsius, fahrenheit) {
-  if (!isFinite(celsius) || celsius <= 0) return "–"
-  var deg = Math.round(fahrenheit ? celsius * 9 / 5 + 32 : celsius)
-  return deg + "°" + (fahrenheit ? "F" : "C")
-}
-
-function formatGhz(mhz) {
-  if (!isFinite(mhz) || mhz <= 0) return "–"
-  return (mhz / 1000).toFixed(1) + " GHz"
+  var n = tempNumber(celsius, fahrenheit)
+  return n === "–" ? n : n + "°" + (fahrenheit ? "F" : "C")
 }
 
 // Just the number, for a bar row where an icon already says what it measures.
 function formatGhzShort(mhz) {
   if (!isFinite(mhz) || mhz <= 0) return "–"
   return (mhz / 1000).toFixed(1)
+}
+
+function formatGhz(mhz) {
+  var n = formatGhzShort(mhz)
+  return n === "–" ? n : n + " GHz"
 }
 
 function formatWatts(watts) {

@@ -51,6 +51,10 @@ KeyboardPanel {
   readonly property color memColor: Model.mixColor(baseColor, hotColor, memSeverity)
   readonly property color vramColor: Model.mixColor(baseColor, hotColor, vramSeverity)
 
+  // parseProbe's stand-in ("CPU", 0 cores, 0 threads) fills cpuInfo until
+  // hw-probe answers, and for good if it never does; it is not data.
+  readonly property bool cpuKnown: !!hw.cpuInfo && hw.cpuInfo.threads > 0
+
   // GPU load, or VRAM occupancy on a card that reports no load counter.
   readonly property real gpuMeter: hw.gpuPercent >= 0 ? hw.gpuPercent : hw.gpuVramPercent
 
@@ -213,7 +217,7 @@ KeyboardPanel {
                 textFormat: Text.PlainText
                 width: parent.width
                 wrapMode: Text.Wrap
-                text: hw.cpuInfo && hw.cpuInfo.model ? hw.cpuInfo.model : "System Telemetry"
+                text: root.cpuKnown ? hw.cpuInfo.model : "System Telemetry"
                 color: root.mutedColor
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.caption
@@ -493,7 +497,7 @@ KeyboardPanel {
             HalfColumn {
               InfoPair {
                 label: "Cores"
-                value: hw.cpuInfo ? (hw.cpuInfo.cores + "C / " + hw.cpuInfo.threads + "T") : "–"
+                value: root.cpuKnown ? hw.cpuInfo.cores + "C / " + hw.cpuInfo.threads + "T" : "–"
               }
               InfoPair {
                 label: "Avg Clock"
@@ -583,11 +587,11 @@ KeyboardPanel {
             HalfColumn {
               InfoPair {
                 label: "Swap Used"
-                value: hw.memory && hw.memory.swapTotalKib > 0 ? Model.formatKib(hw.memory.swapUsedKib) + " GiB" : "0 GiB"
+                value: !hw.memory ? "–" : hw.memory.swapTotalKib > 0 ? Model.formatKib(hw.memory.swapUsedKib) + " GiB" : "None"
               }
               InfoPair {
                 label: "Swap Total"
-                value: hw.memory && hw.memory.swapTotalKib > 0 ? Model.formatKib(hw.memory.swapTotalKib) + " GiB" : "None"
+                value: !hw.memory ? "–" : hw.memory.swapTotalKib > 0 ? Model.formatKib(hw.memory.swapTotalKib) + " GiB" : "None"
               }
             }
           }
@@ -989,7 +993,7 @@ KeyboardPanel {
     id: meterRoot
     property string period: ""
     property real value: 0
-    readonly property real ratio: value / (hw.cpuInfo && hw.cpuInfo.threads ? hw.cpuInfo.threads : 8)
+    readonly property real ratio: value / (root.cpuKnown ? hw.cpuInfo.threads : 8)
 
     width: (parent.width - parent.spacing * 2) / 3
     spacing: Style.space(4)

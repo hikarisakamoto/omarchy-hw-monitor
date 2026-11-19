@@ -33,7 +33,6 @@
       "topProcCount": 6,
       "topProcSort": "ram",
       "topProcGroup": true,
-      "showGauges": true,
       "showValues": false,
       "showClocks": false,
       "iconSize": 0,
@@ -198,8 +197,7 @@
         "key": "showGauges",
         "type": "boolean",
         "label": "Show vertical gauges",
-        "defaultValue": true,
-        "description": "Show vertical battery-style capsule gauges in the bar."
+        "description": "Show vertical battery-style capsule gauges in the bar. Unset, they are on in compact and full and off in icons and labels. A set value overrides the mode, but the labels readout never draws gauges."
       },
       {
         "key": "showValues",

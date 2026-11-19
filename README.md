@@ -149,7 +149,7 @@ omarchy bar set meviusisback.hw-monitor fahrenheit true --json
 | `tempFormat` | string | `"degree-unit"` | `"degree-unit"` (`45°C`), `"degree"` (`45°`), `"unit"` (`45C`), `"unit-lower"` (`45c`), or `"bare"` (`45`). |
 | `fahrenheit` | bool | `false` | Temperatures in °F instead of °C. |
 | `percentPad` | string | `"none"` | `"none"`, `"zero"`, `"lead"`, or `"trail"`. Figure cells always reserve their slot width, so neighbours stay put in every mode. |
-| `showGauges` | bool | mode-dependent | Show vertical capsule gauges. Manifest default `true`; entries without the key fall back to on in `compact`/`full`, off in `icons`/`labels`. |
+| `showGauges` | bool | mode-dependent | Show vertical capsule gauges. Unset, they are on in `compact`/`full` and off in `icons`/`labels`. A set value overrides the mode, but the `labels` readout never draws gauges. |
 | `showValues` | bool | `false` | Put percentages back on the row beside each gauge in `compact`/`full` modes. (`icons` and `labels` always show them). |
 | `showClocks` | bool | `false` | Show CPU and GPU clock speeds in GHz. |
 | `gpuIcon` | string | `"󰾲"` | Glyph marking the GPU figure. |

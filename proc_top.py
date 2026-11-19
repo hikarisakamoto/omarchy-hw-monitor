@@ -54,12 +54,17 @@ GENERIC_BASES = ("app", "user", "system", "init", "session")
 
 
 def unescape_unit(text: str) -> str:
-    def sub(match):
-        try:
-            return chr(int(match.group(1), 16))
-        except ValueError:
-            return "?"
-    return re.sub(r"\\x([0-9a-fA-F]{2})", sub, text)
+    r"""Undo systemd unit-name escaping.
+
+    Each \xNN is one byte of the UTF-8 name, so a run of them is decoded
+    together ("\xc3\xa9" is one "e" with an acute accent, not two Latin-1
+    characters). Invalid UTF-8 becomes U+FFFD; nothing here raises.
+    """
+    return re.sub(
+        r"(?:\\x[0-9a-fA-F]{2})+",
+        lambda m: bytes.fromhex(m.group(0).replace("\\x", "")).decode(
+            "utf-8", "replace"),
+        text)
 
 
 def app_identity(cgline: str) -> str:

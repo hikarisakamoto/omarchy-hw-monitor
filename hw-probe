@@ -37,12 +37,16 @@ json_str() {
   printf '"%s"' "$s"
 }
 
-# Emit `"key": <json>` only when the path exists, so the consumer can treat a
-# missing key as "this machine does not report that".
+# Emit `"key": "value", ` for one string field of an object being built up.
+field_str() {
+  printf '%s: %s, ' "$(json_str "$1")" "$(json_str "$2")"
+}
+
+# Same, but only when the path exists, so the consumer can treat a missing
+# key as "this machine does not report that".
 field_path() {
-  local key=$1 path=$2
-  [[ -n $path && -r $path ]] || return 0
-  printf '%s: %s, ' "$(json_str "$key")" "$(json_str "$path")"
+  [[ -n $2 && -r $2 ]] || return 0
+  field_str "$1" "$2"
 }
 
 trim() {
@@ -214,9 +218,9 @@ for card in /sys/class/drm/card[0-9]*; do
   done
 
   entry="{"
-  entry+="$(printf '%s: %s, ' "$(json_str kind)" "$(json_str "${driver:-drm}")")"
-  entry+="$(printf '%s: %s, ' "$(json_str name)" "$(json_str "$(gpu_name_for "$slot" "$driver")")")"
-  entry+="$(printf '%s: %s, ' "$(json_str card)" "$(json_str "${card##*/}")")"
+  entry+="$(field_str kind "${driver:-drm}")"
+  entry+="$(field_str name "$(gpu_name_for "$slot" "$driver")")"
+  entry+="$(field_str card "${card##*/}")"
   entry+="$(field_path busyPath "$dev/gpu_busy_percent")"
   entry+="$(field_path vramUsedPath "$dev/mem_info_vram_used")"
   entry+="$(field_path vramTotalPath "$dev/mem_info_vram_total")"
@@ -257,9 +261,9 @@ if [[ -n $nv_bin ]]; then
   # would otherwise be taken for a GPU name.
   nv_name=$("$nv_bin" --query-gpu=name --format=csv,noheader 2>/dev/null | head -1) || nv_name=""
   if [[ -n $nv_name ]]; then
-    nv="{$(printf '%s: %s, ' "$(json_str kind)" "$(json_str nvidia)")"
-    nv+="$(printf '%s: %s, ' "$(json_str name)" "$(json_str "$(trim "$nv_name")")")"
-    nv+="$(printf '%s: %s, ' "$(json_str nvidiaPath)" "$(json_str "$nv_bin")")"
+    nv="{$(field_str kind nvidia)"
+    nv+="$(field_str name "$(trim "$nv_name")")"
+    nv+="$(field_str nvidiaPath "$nv_bin")"
     nv+="$(printf '%s: %s' "$(json_str index)" 0)}"
     if ((${#gpu_entries[@]} == 0)); then
       gpu_entries=("$nv")

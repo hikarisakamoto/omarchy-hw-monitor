@@ -176,6 +176,10 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 - The guard against near-empty CPU windows also holds when `hw-probe` never
   reported the CPU (it cannot run, crashes or is killed), so a resample right
   after a tick no longer reads noise there either.
+- Switching `gpu` while an `nvidia-smi` reading is under way no longer shows
+  that reading under the newly selected card (another NVIDIA card, or a sysfs
+  card whose fresh readings it overwrote); it is dropped and the new card is
+  read at once.
 
 ## 1.2.1 — 2026-10-16
 

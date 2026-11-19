@@ -89,6 +89,9 @@ Item {
   readonly property bool showTopProcs: boolSetting("showTopProcs", true)
   readonly property string procTopPath: pluginDir + "/proc_top.py"
   property double _lastProcTopTry: 0
+  // The argv of the nvidia-smi run in flight, to tell whether its result is
+  // still for the selected card when it lands.
+  property string _nvidiaRun: ""
   // Teardown veto: once destruction begins (the hot-reload window) no handler
   // touches state any more. See Component.onDestruction at the bottom.
   property bool _destroyed: false
@@ -197,15 +200,23 @@ Item {
     gpuVramTotalBytes = readNumber(gpuVramTotalFile, 0)
   }
 
-  function sampleNvidia() {
-    if (_destroyed || nvidiaProcess.running) return
+  // The nvidia-smi argv for the selected card, or [] when it is not NVIDIA.
+  function nvidiaCommand() {
+    if (!gpuIsNvidia) return []
     // hw-probe reports the absolute path it resolved, so the bar never
     // re-resolves nvidia-smi from the session PATH at sample time.
-    var bin = gpuInfo && gpuInfo.nvidiaPath ? String(gpuInfo.nvidiaPath) : "nvidia-smi"
-    nvidiaProcess.spawn([bin,
-                         "--query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,power.draw,clocks.gr",
-                         "--format=csv,noheader,nounits",
-                         "--id=" + String(gpuInfo.index !== undefined ? gpuInfo.index : 0)])
+    var bin = gpuInfo.nvidiaPath ? String(gpuInfo.nvidiaPath) : "nvidia-smi"
+    return [bin,
+            "--query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,power.draw,clocks.gr",
+            "--format=csv,noheader,nounits",
+            "--id=" + String(gpuInfo.index !== undefined ? gpuInfo.index : 0)]
+  }
+
+  function sampleNvidia() {
+    if (_destroyed || nvidiaProcess.running) return
+    var cmd = nvidiaCommand()
+    _nvidiaRun = cmd.join(" ")
+    nvidiaProcess.spawn(cmd)
   }
 
   // A run that failed, printed an error instead of CSV, or was killed before
@@ -313,7 +324,14 @@ Item {
     timeoutMs: 10000
     killMs: 2000
     byteCap: Model.HELPER_MAX_CHARS
-    onFinished: function(text) { if (!root._destroyed) root.applyNvidia(text) }
+    // A run spawned for a card that is no longer selected (the gpu setting
+    // changed while it ran) is dropped rather than shown under the new card,
+    // and the new card is read once the process has exited: `running` is still
+    // true inside these handlers, so the resample is deferred.
+    onFinished: function(text) {
+      if (!root._destroyed && root._nvidiaRun === root.nvidiaCommand().join(" ")) root.applyNvidia(text)
+    }
+    onExited: if (!root._destroyed && root._nvidiaRun !== root.nvidiaCommand().join(" ")) Qt.callLater(root.sample)
   }
 
   // Top-processes worker: run directly (never sh -c), stdout capped at one

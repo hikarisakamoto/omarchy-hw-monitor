@@ -42,7 +42,10 @@ Panel {
   readonly property bool showTemps: mode !== "compact" && !vertical
   readonly property bool showValues: (labelled || mode === "icons" || boolSetting("showValues", false)) && !vertical
   readonly property bool showGauges: boolSetting("showGauges", mode !== "icons" && mode !== "labels")
-  readonly property bool showClocks: boolSetting("showClocks", false) && !vertical
+  // showClocksSetting is the saved value (the drawer shows and toggles it);
+  // showClocks is what the bar draws, never on a vertical bar.
+  readonly property bool showClocksSetting: boolSetting("showClocks", false)
+  readonly property bool showClocks: showClocksSetting && !vertical
 
   readonly property var monitors: {
     var raw = setting("monitors", [])
@@ -519,7 +522,7 @@ Panel {
     showGpuTemp: root.showGpuTemp
     showRam: root.showRam
     showTopProcs: root.showTopProcs
-    showClocks: root.showClocks
+    showClocks: root.showClocksSetting
     showGauges: root.showGauges
     ramFormat: root.ramFormat
     tempFormat: root.tempFormat

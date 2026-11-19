@@ -184,6 +184,9 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   that reading under the newly selected card (another NVIDIA card, or a sysfs
   card whose fresh readings it overwrote); it is dropped and the new card is
   read at once.
+- On a left or right bar the settings drawer's Clocks chip now shows the saved
+  setting and toggles it; it used to stay unlit and could only switch clocks
+  on.
 
 ## 1.2.1 — 2026-10-16
 

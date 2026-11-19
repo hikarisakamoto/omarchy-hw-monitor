@@ -291,11 +291,12 @@ function gibFromBytes(bytes) {
 }
 
 // One decimal below 10 GiB, none above: "9.4G" and "62G" both stay narrow,
-// and the bar never reflows as memory crosses a rounding boundary.
+// and the bar never reflows as memory crosses a rounding boundary. The cut is
+// at 9.95, not 10, because toFixed(1) rounds anything above it up to "10.0".
 function formatGib(gib) {
   if (!isFinite(gib) || gib < 0) return "–"
   if (gib === 0) return "0"
-  if (gib < 10) return gib.toFixed(1)
+  if (gib < 9.95) return gib.toFixed(1)
   return String(Math.round(gib))
 }
 

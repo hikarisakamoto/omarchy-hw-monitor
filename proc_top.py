@@ -26,7 +26,11 @@ import time
 TOP_DEFAULT = 6
 TOP_MIN = 3
 TOP_MAX = 12
-PID_CAP = 4096
+# Scan bound. listdir is in pid order, so a cap drops the highest pids; keep
+# it far above a desktop's process count. Two passes over 16384 pids cost
+# ~0.35 s on top of the 0.4 s gap: inside Service.qml's 2 s watchdog with
+# margin for a loaded machine. Model.js PROC_COUNT_MAX mirrors it.
+PID_CAP = 16384
 NAME_MAX = 48
 SNAP_GAP_S = 0.4
 SORTS = ("ram", "cpu")

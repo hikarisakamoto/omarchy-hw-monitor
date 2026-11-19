@@ -361,6 +361,7 @@ function formatRpm(rpm) {
 // The collector's order (by the chosen metric) is preserved.
 var PROC_TOP_MAX = 12
 var PROC_NAME_MAX = 48
+var PROC_COUNT_MAX = 16384 // proc_top.py PID_CAP: no group can hold more
 var PROC_GROUPEDS = ["none", "scope", "comm"]
 
 function parseProcTop(raw, maxN) {
@@ -390,7 +391,7 @@ function parseProcTop(raw, maxN) {
     if (name === undefined) name = "?"
     var count = Math.floor(toNumberSafe(p.count, 1))
     if (!isFinite(count) || count < 1) count = 1
-    if (count > 4096) count = 4096
+    if (count > PROC_COUNT_MAX) count = PROC_COUNT_MAX
     var rssKib = Math.floor(toNumberSafe(p.rssKib, -1))
     if (rssKib < 0 || rssKib > 68719476736) continue
     out.rows.push({

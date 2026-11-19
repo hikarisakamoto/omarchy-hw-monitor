@@ -26,6 +26,8 @@ Item {
   property real diameter: Style.space(108)
   property real arcWidth: Math.max(3, Style.space(4))
   property string fontFamily: Style.font.family
+  // Colour changes fade only while this is set; a hidden dial just updates.
+  property bool animated: true
 
   // A NaN ratio reads as an empty arc rather than poisoning the sweep angles.
   readonly property real fraction: isFinite(ratio) ? Math.max(0, Math.min(1, ratio)) : 0
@@ -120,7 +122,7 @@ Item {
       font.pixelSize: Style.font.title
       font.bold: true
       color: root.valueColor
-      Behavior on color { ColorAnimation { duration: 240 } }
+      Behavior on color { enabled: root.animated; ColorAnimation { duration: 240 } }
     }
 
     Text {
@@ -132,7 +134,7 @@ Item {
       font.pixelSize: Style.font.caption
       font.bold: true
       color: root.subTextColor
-      Behavior on color { ColorAnimation { duration: 240 } }
+      Behavior on color { enabled: root.animated; ColorAnimation { duration: 240 } }
     }
   }
 }

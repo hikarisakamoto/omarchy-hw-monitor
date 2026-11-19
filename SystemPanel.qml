@@ -441,7 +441,8 @@ KeyboardPanel {
               color: Qt.alpha(root.baseColor, 0.08)
             }
 
-            // Sparkline fill area
+            // Sparkline: the area fill, then the stroke over it, in one Shape so
+            // both share a single multisampled layer.
             Shape {
               anchors.fill: parent
               visible: root.sparklinePoints.length >= 2
@@ -460,14 +461,6 @@ KeyboardPanel {
                   path: root.sparklineFillPoints
                 }
               }
-            }
-
-            // Sparkline stroke line
-            Shape {
-              anchors.fill: parent
-              visible: root.sparklinePoints.length >= 2
-              layer.enabled: true
-              layer.samples: 4
 
               ShapePath {
                 strokeWidth: Style.space(2)
@@ -651,11 +644,16 @@ KeyboardPanel {
             spacing: Style.space(6)
             visible: hw.topProcs.length > 0
 
+            // Modelled on the row count, not the array: Service assigns a new
+            // array every refresh, which would rebuild every row (so the bars
+            // could never animate). Indexing keeps the rows and re-binds them.
             Repeater {
-              model: hw.topProcs
+              model: hw.topProcs.length
               delegate: Column {
-                required property var modelData
                 required property int index
+                // {} only for the instant a shorter list lands before the
+                // Repeater drops this row.
+                readonly property var row: hw.topProcs[index] || ({})
 
                 width: parent.width
                 spacing: Style.space(3)
@@ -665,8 +663,8 @@ KeyboardPanel {
                 readonly property real topRss: total > 0 ? Math.max(1, hw.topProcs[0].rssKib) : 1
                 readonly property real topCpu: total > 0 ? Math.max(0, hw.topProcs[0].cpu) : 0
                 readonly property bool useCpuBars: sortCpu && topCpu > 0
-                readonly property real metricVal: sortCpu ? modelData.cpu : modelData.memPct
-                readonly property real shareD: useCpuBars ? modelData.cpu / Math.max(1, topCpu) : modelData.rssKib / topRss
+                readonly property real metricVal: sortCpu ? row.cpu : row.memPct
+                readonly property real shareD: useCpuBars ? row.cpu / Math.max(1, topCpu) : row.rssKib / topRss
                 readonly property real rankSev: total > 1 ? (1 - index / (total - 1)) : 1
                 readonly property real combinedSev: Math.max(0.35 + 0.65 * rankSev,
                   Model.severity(metricVal, root.warnPercent, root.criticalPercent))
@@ -693,7 +691,7 @@ KeyboardPanel {
                     textFormat: Text.PlainText
                     width: Math.max(40, parent.width - procRank.implicitWidth - procFigs.implicitWidth - parent.spacing * 2)
                     elide: Text.ElideRight
-                    text: modelData.count > 1 ? (modelData.name + "  · " + modelData.count + " processes") : (modelData.name + "  (" + modelData.pid + ")")
+                    text: row.count > 1 ? (row.name + "  · " + row.count + " processes") : (row.name + "  (" + row.pid + ")")
                     color: root.baseColor
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.bodySmall
@@ -704,7 +702,7 @@ KeyboardPanel {
                     id: procFigs
                     textFormat: Text.PlainText
                     anchors.verticalCenter: parent.verticalCenter
-                    text: Model.formatMemKib(modelData.rssKib) + " · CPU " + Model.formatPercent(modelData.cpu)
+                    text: Model.formatMemKib(row.rssKib) + " · CPU " + Model.formatPercent(row.cpu)
                     color: sevColor
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.caption
@@ -948,7 +946,9 @@ KeyboardPanel {
       font.family: root.fontFamily
       font.pixelSize: infoPairRoot.fontSize
       font.bold: infoPairRoot.valueBold
-      Behavior on color { ColorAnimation { duration: 240 } }
+      // Off while the panel is closed: the value still updates, without
+      // running an animation nobody can see.
+      Behavior on color { enabled: root.open; ColorAnimation { duration: 240 } }
     }
   }
 
@@ -977,13 +977,14 @@ KeyboardPanel {
       radius: parent.radius
       color: meter.fillColor
       width: meter.ratio >= 0 ? Math.max(parent.height, Math.min(parent.width, parent.width * meter.ratio)) : 0
-      Behavior on width { NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
+      Behavior on width { enabled: root.open; NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
     }
   }
 
   // A Dial taking a third of its row, in the panel's colours.
   component PanelDial: Dial {
     width: (parent.width - parent.spacing * 2) / 3
+    animated: root.open
     baseColor: root.baseColor
     hotColor: root.hotColor
     fontFamily: root.fontFamily

@@ -87,6 +87,17 @@ Panel {
   readonly property string tempFormat: enumSetting("tempFormat",
     ["degree-unit", "degree", "unit", "unit-lower", "bare"], "degree-unit")
 
+  // The unit marker after a temperature figure. tempText() draws it and the
+  // temperature slot is measured with it, so the two cannot disagree.
+  readonly property string tempSuffix: {
+    var unit = fahrenheit ? "F" : "C"
+    if (tempFormat === "degree-unit") return "°" + unit
+    if (tempFormat === "degree") return "°"
+    if (tempFormat === "unit") return unit
+    if (tempFormat === "unit-lower") return unit.toLowerCase()
+    return ""
+  }
+
   // Entries without the key keep the dimmed leading zero the label-bearing
   // modes have always drawn; icons mode draws the bare figure. "trail" (first
   // shipped as "space") reserved a trailing slot, which every figure cell now
@@ -171,7 +182,7 @@ Panel {
     id: tempMetrics
     font.family: root.fontFamily
     font.pixelSize: root.valueSize
-    text: "100°C"
+    text: "100" + root.tempSuffix
   }
 
   // Representative widest figure per RAM format; the cell never shrinks below
@@ -207,12 +218,7 @@ Panel {
     var figure = Model.tempNumber(celsius, fahrenheit)
     if (figure === "–") return Model.padLeft(figure, 3)
 
-    var unit = fahrenheit ? "F" : "C"
-    var text = figure
-    if (tempFormat === "degree-unit") text += "°" + unit
-    else if (tempFormat === "degree") text += "°"
-    else if (tempFormat === "unit") text += unit
-    else if (tempFormat === "unit-lower") text += unit.toLowerCase()
+    var text = figure + tempSuffix
     return (labelled || percentPad === "lead") ? Model.padLeft(text, 3) : text
   }
 

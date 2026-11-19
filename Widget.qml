@@ -125,6 +125,7 @@ Panel {
   readonly property int gpuIconRotation: intSetting("gpuIconRotation", 0, -360, 360)
   readonly property int cpuIconRotation: intSetting("cpuIconRotation", 0, -360, 360)
   readonly property int tempIconRotation: intSetting("tempIconRotation", 0, -360, 360)
+  readonly property int gpuTempIconRotation: intSetting("gpuTempIconRotation", 0, -360, 360)
   readonly property int ramIconRotation: intSetting("ramIconRotation", 0, -360, 360)
 
   // Readers for this entry's settings. The coercion lives in Model.js, so
@@ -288,7 +289,7 @@ Panel {
       return loadCell("CPU", cpuIcon, cpuIconRotation, hw.cpuPercent, hw.cpuTempC, hw.cpuMhz)
     }
     if (key === "cpu-temp") return tempCell("TEMP", tempIcon, tempIconRotation, hw.cpuTempC)
-    if (key === "gpu-temp") return tempCell("GPU°", gpuTempIcon, gpuIconRotation, hw.gpuTempC)
+    if (key === "gpu-temp") return tempCell("GPU°", gpuTempIcon, gpuTempIconRotation, hw.gpuTempC)
     return {
       label: "RAM", icon: ramIcon, iconRotation: ramIconRotation,
       value: ramText(), pad: "", temp: "", tempC: -1, clock: "",

@@ -53,6 +53,7 @@
       "gpuIconRotation": 0,
       "cpuIconRotation": 0,
       "tempIconRotation": 0,
+      "gpuTempIconRotation": 0,
       "ramIconRotation": 0,
       "clickCommand": "",
       "padOpacity": 0.3,
@@ -297,7 +298,17 @@
         "max": 360,
         "step": 1,
         "defaultValue": 0,
-        "description": "Rotate the temperature glyph (0, 90, 180, 270)."
+        "description": "Rotate the CPU temperature glyph (0, 90, 180, 270)."
+      },
+      {
+        "key": "gpuTempIconRotation",
+        "type": "integer",
+        "label": "GPU temperature glyph rotation (deg)",
+        "min": -360,
+        "max": 360,
+        "step": 1,
+        "defaultValue": 0,
+        "description": "Rotate the GPU temperature glyph (0, 90, 180, 270)."
       },
       {
         "key": "ramIconRotation",

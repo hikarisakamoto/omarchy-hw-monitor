@@ -51,8 +51,10 @@ KeyboardPanel {
   readonly property color memColor: Model.mixColor(baseColor, hotColor, memSeverity)
   readonly property color vramColor: Model.mixColor(baseColor, hotColor, vramSeverity)
 
-  // parseProbe's stand-in ("CPU", 0 cores, 0 threads) fills cpuInfo until
-  // hw-probe answers, and for good if it never does; it is not data.
+  // parseProbe's stand-in (empty model, 0 cores, 0 threads) fills cpuInfo
+  // until hw-probe answers, and for good if it never does; it is not data. A
+  // probe that parsed but reports no threads (its model falls back to "CPU")
+  // is just as unknown, so cpuKnown tests threads, not the name.
   readonly property bool cpuKnown: !!hw.cpuInfo && hw.cpuInfo.threads > 0
 
   // GPU load, or VRAM occupancy on a card that reports no load counter.

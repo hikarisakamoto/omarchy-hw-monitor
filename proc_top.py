@@ -56,6 +56,11 @@ GENERIC_BASES = ("app", "user", "system", "init", "session")
 # app name), so every app opened through them would merge into one row.
 # Their processes fall back to comm.
 LAUNCHERS = ("gtk-launch",)
+# Chromium-based browsers and Electron apps (brave, Spotify, ChatGPT...) move
+# their main process into app-org.chromium.Chromium-<pid>.scope, and helpers
+# it starts afterwards follow it there. That app id is Chromium's default,
+# shared by all of them, so such a scope is named after its main process.
+CHROMIUM_SCOPE = re.compile(r"org\.chromium\.Chromium-(\d+)")
 
 
 def unescape_unit(text: str) -> str:
@@ -96,9 +101,13 @@ def app_identity(cgline: str) -> str:
             base = base[len("app-"):]
         if base.startswith("Hyprland-"):
             base = base[len("Hyprland-"):]
-        base = re.sub(r"(-[0-9a-fA-F]{4,})+$", "", base)
-        if "." in base:
-            base = base.split(".")[-1]
+        main = CHROMIUM_SCOPE.fullmatch(base)
+        if main:
+            base = scope_main_comm(int(main.group(1)), cgline)
+        else:
+            base = re.sub(r"(-[0-9a-fA-F]{4,})+$", "", base)
+            if "." in base:
+                base = base.split(".")[-1]
         if base in GENERIC_BASES or base in LAUNCHERS:
             continue
         pretty = sanitize_name(base)
@@ -176,6 +185,17 @@ def read_stat(pid: int) -> tuple[str, int]:
     head, rest = stat.rsplit(")", 1)
     tail = rest.split()
     return head.partition("(")[2], int(tail[11]) + int(tail[12])
+
+
+def scope_main_comm(pid: int, cgline: str) -> str:
+    """comm of a scope's main process, or "" once that pid is no longer in
+    the scope (exited, or reused by a process elsewhere)."""
+    if read_cgroup_first(pid) != cgline.strip():
+        return ""
+    try:
+        return read_stat(pid)[0]
+    except (OSError, ValueError, IndexError):
+        return ""
 
 
 def read_statm(pid: int) -> tuple[int, int]:

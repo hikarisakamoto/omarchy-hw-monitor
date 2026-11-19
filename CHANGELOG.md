@@ -76,6 +76,9 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   narrower formats no longer leave a gap after the figure.
 - With `ramFormat: "available"` the settings drawer now marks the Free chip.
 - `status` no longer prints "undefined" for a GPU the probe could not name.
+- Chromium-based browsers and Electron apps (brave, Spotify, ChatGPT) no
+  longer lose their main process and its helpers to a mixed "Chromium" row;
+  those processes are counted in their own app's row.
 
 ## 1.2.1 — 2026-10-16
 

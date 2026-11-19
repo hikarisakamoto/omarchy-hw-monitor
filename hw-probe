@@ -265,7 +265,12 @@ if [[ -n $nv_bin ]]; then
   # --id= when sampling. With no NVIDIA card nvidia-smi fails but prints its
   # error on stdout, so its exit status gates the output, and a line counts
   # only when it leads with a plain index (emitted below as a JSON number).
-  nv_out=$("$nv_bin" --query-gpu=index,name --format=csv,noheader 2>/dev/null) || nv_out=""
+  # The call is bounded because the JSON is printed only at the end: a hung
+  # nvidia-smi (GPU lost after suspend, wedged driver) would otherwise lose
+  # every sensor, CPU included. The worst case, 5 s plus 1 s kill-after, must
+  # stay below the Service's 8 s probe watchdog (probeProcess timeoutMs in
+  # Service.qml); a timeout is handled like any other nvidia-smi failure.
+  nv_out=$(timeout --kill-after=1 5 "$nv_bin" --query-gpu=index,name --format=csv,noheader 2>/dev/null) || nv_out=""
   while IFS=, read -r nv_idx nv_name; do
     nv_idx=$(trim "$nv_idx")
     nv_name=$(trim "$nv_name")

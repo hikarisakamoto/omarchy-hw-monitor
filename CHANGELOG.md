@@ -84,6 +84,10 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 ### Fixed
 
 - Every NVIDIA card is listed, so `gpu` can select a second one.
+- A hung `nvidia-smi` (a GPU lost after suspend, a wedged driver) no longer
+  makes discovery lose every sensor: `hw-probe` gives it 5 seconds, then
+  reports the CPU and the other GPUs without the NVIDIA card instead of
+  printing nothing, and no stuck `nvidia-smi` is left behind on each retry.
 - A GPU whose `pci.ids` entry has no bracketed marketing name is named from
   that entry alone. Such AMD cards (Phoenix1, Lucienne...) were all named
   "AMD/ATI" and can now be told apart and selected by name; such Intel and

@@ -123,7 +123,7 @@ def read_mem_total_kib() -> int:
             for line in fh:
                 if line.startswith("MemTotal:"):
                     return int(line.split()[1])
-    except OSError:
+    except (OSError, ValueError, IndexError):
         pass
     return 0
 

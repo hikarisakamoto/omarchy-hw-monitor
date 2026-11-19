@@ -236,6 +236,33 @@ manifest `defaults` match the schema, and syntax-checks `hw-probe`,
 `proc_top.py`, `Model.js` and the QML files. `shellcheck` and `pyflakes` also
 run when installed.
 
+To try uncommitted changes in your own bar, link your checkout in place of the
+installed copy. Parking the installed copy under a dot-name keeps it out of the
+shell's plugin scan, and your bar entry and its settings stay as they are. Run
+this from the checkout:
+
+```sh
+plugins=~/.config/omarchy/plugins
+mv "$plugins/meviusisback.hw-monitor" "$plugins/.meviusisback.hw-monitor.orig" &&
+  ln -s "$PWD" "$plugins/meviusisback.hw-monitor"
+```
+
+The shell's file watcher does not follow the link, so reload after each edit:
+
+```sh
+omarchy-shell shell rescanPlugins
+```
+
+To go back, remove the link, move the `.orig` folder back to its name, and
+rescan. Do that before running `omarchy plugin update`, which would otherwise
+treat your checkout as the installed plugin and try to fast-forward it from its
+`origin`.
+
+On a machine without the plugin installed, you can install the checkout itself
+instead: `omarchy plugin add "$PWD" --enable` once, then
+`omarchy plugin update meviusisback.hw-monitor --yes` after each commit. That
+validates the new commit, rolls back one that fails, and reloads the shell.
+
 ## License
 
 MIT — see [LICENSE](LICENSE). Original work by Edgar Silva; continued and

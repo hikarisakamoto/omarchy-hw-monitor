@@ -57,6 +57,9 @@ scripts/check.sh   # manifest validation, defaults vs schema, syntax of every fi
 ./hw-probe | jq    # the sensors the probe finds on this machine
 ```
 
+The README's Development section has the loop for trying a change in your own
+bar.
+
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:46cd31e7 -->
 ## Beads Issue Tracker
 

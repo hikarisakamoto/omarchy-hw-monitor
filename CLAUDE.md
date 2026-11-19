@@ -68,6 +68,9 @@ scripts/check.sh   # manifest validation, defaults vs schema, syntax of every fi
 ./hw-probe | jq    # the sensors the probe finds on this machine
 ```
 
+The README's Development section has the loop for trying a change in your own
+bar.
+
 ## Architecture Overview
 
 _Add a brief overview of your project architecture_

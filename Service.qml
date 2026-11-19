@@ -66,9 +66,10 @@ Item {
   readonly property real gpuVramPercent: gpuVramTotalBytes > 0
     ? Model.clamp(100 * gpuVramUsedBytes / gpuVramTotalBytes, 0, 100) : -1
 
-  // Top processi per RAM: campionati solo a pannello aperto, mai in background.
-  // Lo stato vive qui (persiste con la shell); il worker è per-tick e non
-  // sopravvive tra i poll. Guardia singola: procTopProcess.running.
+  // Top processes: sampled only while the panel is open, never in the
+  // background. The state lives here and persists with the shell; the worker
+  // is spawned per poll and does not outlive it. One guard:
+  // procTopProcess.running.
   property var topProcs: []
   property bool procPanelOpen: false
   property string procTopTime: ""
@@ -94,8 +95,8 @@ Item {
   property int _probeBase: 0
   property int _nvidiaBase: 0
   property int _procTopBase: 0
-  // Veto anti-teardown: nessun handler tocca più lo stato dopo l'inizio
-  // della distruzione (finestra di reload). Vedi onDestruction in fondo.
+  // Teardown veto: once destruction begins (the hot-reload window) no handler
+  // touches state any more. See Component.onDestruction at the bottom.
   property bool _destroyed: false
 
   // Cumulative jiffies from the previous tick. CPU usage is the ratio between
@@ -218,9 +219,9 @@ Item {
     gpuVramTotalBytes = sample.vramTotalBytes
   }
 
-  // Lancia proc_top.py al massimo ogni 3 s. Solo valori allowlist in argv
-  // (intero clampato, sort ram/cpu validato, flag --group per presenza):
-  // la stringa grezza del setting non tocca mai argv. Niente PATH, niente shell.
+  // Spawns proc_top.py at most every 3 s. Only allowlisted values reach argv
+  // (a clamped integer, a validated ram/cpu sort, a bare --group flag): the
+  // raw setting string never touches argv. No PATH lookup, no shell.
   function refreshProcTop() {
     if (_destroyed || !active || !procPanelOpen || procTopProcess.running) return
     var now = Date.now()
@@ -234,8 +235,8 @@ Item {
     procTopWatchdog.restart()
   }
 
-  // Cambio sort/raggruppamento → refresh immediato (throttle azzerato).
-  // Le guardie in refreshProcTop restano valide: a pannello chiuso non parte.
+  // A sort or grouping change refreshes at once (throttle reset). The guards
+  // in refreshProcTop still apply: nothing runs while the panel is closed.
   onTopProcSortChanged: {
     _lastProcTopTry = 0
     refreshProcTop()
@@ -353,9 +354,10 @@ Item {
     }
   }
 
-  // Worker top-processi: esecuzione diretta (mai sh -c), stdout limitato a una
-  // riga JSON <16 KB, validato da Model.parseProcTop. Fallimento soft: tiene
-  // l'ultimo valore buono e alza procTopFailed invece di svuotare la sezione.
+  // Top-processes worker: run directly (never sh -c), stdout capped at one
+  // JSON line under 16 KB and validated by Model.parseProcTop. It fails soft:
+  // the last good list stays and procTopFailed is raised instead of emptying
+  // the section.
   Process {
     id: procTopProcess
     stdout: StdioCollector {
@@ -398,7 +400,7 @@ Item {
     }
   }
 
-  // Watchdog kill-before-next-tick: 0.4 s di lettura interna << 2 s << 3 s di
+  // Watchdog kill-before-next-tick: 0.4 s internal read << 2 s watchdog << 3 s
   // throttle. The first trigger sends SIGTERM via running=false; the kill
   // timer escalates to SIGKILL for a helper that ignores it. Both stay armed
   // until onExited — a helper that finishes its output and then hangs must
@@ -534,8 +536,8 @@ Item {
     }
   }
 
-  // Cleanup anti-teardown: ferma worker e watchdog e alza il veto, così
-  // nessun callback in volo tocca lo stato durante la finalizzazione (reload).
+  // Teardown: raise the veto and stop every worker and watchdog, so no
+  // in-flight callback touches state while the object is finalised (reload).
   Component.onDestruction: {
     _destroyed = true
     procTopWatchdog.stop()

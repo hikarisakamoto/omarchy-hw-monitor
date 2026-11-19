@@ -136,7 +136,7 @@ omarchy bar set meviusisback.hw-monitor fahrenheit true --json
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `mode` | string | `"icons"` | `"icons"`, `"compact"`, `"full"`, or `"labels"`. Right-clicking cycles them. |
-| `itemsOrder` | array/string | `"gpu,cpu,cpu-temp,ram"` | Sequence of telemetry items in the top bar (`"gpu,cpu,cpu-temp,ram"` or `"gpu,cpu,cpu-temp,gpu-temp,ram"`). |
+| `itemsOrder` | string | `"gpu,cpu,cpu-temp,ram"` | Comma-separated sequence of telemetry items in the top bar (`"gpu,cpu,cpu-temp,ram"` or `"gpu,cpu,cpu-temp,gpu-temp,ram"`). A JSON array also works. |
 | `showGpu` | bool | `true` | Show GPU load (hidden automatically if no card was found). |
 | `showCpu` | bool | `true` | Show CPU load. |
 | `showCpuTemp` | bool | `true` | Show CPU temperature with thermometer icon. |
@@ -172,7 +172,7 @@ omarchy bar set meviusisback.hw-monitor fahrenheit true --json
 | `warnTempC` | int | `75` | Temperature threshold (°C) where figures warm toward urgent. |
 | `criticalTempC` | int | `90` | Temperature threshold (°C) where temperature turns hot urgent red. |
 | `clickCommand` | string | `""` | Command to run on left click. Empty opens the built-in system panel popup. |
-| `monitors` | array/string | `[]` | Connector names to draw on (e.g. `["DP-1"]`). Empty draws on all screens. |
+| `monitors` | string | `""` | Comma-separated connector names to draw on (e.g. `"DP-1,HDMI-A-1"`). A JSON array also works. Empty draws on all screens. |
 
 ## IPC
 

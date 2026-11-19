@@ -388,8 +388,10 @@ Panel {
 
   // ----------------------------------------------------------------- actions
 
+  // Middle click and IPC both reach every placement through broadcast();
+  // one hidden by `monitors` keeps costing nothing.
   function refresh() {
-    hw.sample()
+    if (hw.active) hw.sample()
   }
 
   // Save one key into this widget's shell.json entry, keeping its other keys.
@@ -461,7 +463,7 @@ Panel {
 
     onPressed: function(pressedButton) {
       if (pressedButton === Qt.RightButton) root.cycleMode()
-      else if (pressedButton === Qt.MiddleButton) root.refresh()
+      else if (pressedButton === Qt.MiddleButton) root.broadcast("refresh")
       else root.launchMonitor()
     }
 

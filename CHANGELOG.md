@@ -207,6 +207,9 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 - On a left or right bar the settings drawer's Clocks chip now shows the saved
   setting and toggles it; it used to stay unlit and could only switch clocks
   on.
+- A top-process row whose name needs a fallback font (CJK, for example) is no
+  longer 2 px taller than the others, so the panel no longer shifts when such
+  a row enters or leaves the list.
 
 ## 1.2.1 — 2026-10-16
 

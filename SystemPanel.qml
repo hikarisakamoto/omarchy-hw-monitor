@@ -779,6 +779,10 @@ KeyboardPanel {
                   Text {
                     textFormat: Text.PlainText
                     width: Math.max(40, parent.width - procRank.implicitWidth - procFigs.implicitWidth - parent.spacing * 2)
+                    // Fallback-font (e.g. CJK) names have taller line metrics and
+                    // would grow the row; pin it to the rank's height instead.
+                    height: procRank.implicitHeight
+                    verticalAlignment: Text.AlignVCenter
                     elide: Text.ElideRight
                     text: row.count > 1 ? (row.name + "  · " + row.count + " processes") : (row.name + "  (" + row.pid + ")")
                     color: root.baseColor

@@ -352,7 +352,9 @@ Panel {
     if (hw.cpuMhz > 0) cpu += "  ·  " + Model.formatGhz(hw.cpuMhz)
     lines.push(cpu)
     if (hw.cpuInfo && hw.cpuInfo.model) {
-      lines.push(hw.cpuInfo.model + " · " + hw.cpuInfo.cores + "C/" + hw.cpuInfo.threads + "T")
+      // 0 threads means the probe did not count them, not a real topology.
+      lines.push(hw.cpuInfo.model + (hw.cpuInfo.threads > 0
+        ? " · " + hw.cpuInfo.cores + "C/" + hw.cpuInfo.threads + "T" : ""))
     }
     if (hw.load) {
       lines.push("Load " + hw.load.one.toFixed(2) + "  " + hw.load.five.toFixed(2) + "  " + hw.load.fifteen.toFixed(2))

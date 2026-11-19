@@ -698,7 +698,7 @@ KeyboardPanel {
                     id: procFigs
                     textFormat: Text.PlainText
                     anchors.verticalCenter: parent.verticalCenter
-                    text: Model.formatGib(Model.gibFromKib(modelData.rssKib)) + " GiB · CPU " + Math.round(modelData.cpu) + "%"
+                    text: Model.formatMemKib(modelData.rssKib) + " · CPU " + Model.formatPercent(modelData.cpu)
                     color: sevColor
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.caption

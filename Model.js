@@ -311,6 +311,15 @@ function formatKib(kib) {
   return formatGib(gibFromKib(kib))
 }
 
+// A process's resident memory, with its unit: whole MiB below 1 GiB, where
+// one-decimal GiB would print most daemons as "0.0", and GiB above.
+function formatMemKib(kib) {
+  if (!isFinite(kib) || kib < 0) return "–"
+  var mib = Math.round(kib / 1024)
+  if (mib < 1024) return mib + " MiB"
+  return gibFromKib(kib).toFixed(1) + " GiB"
+}
+
 function formatPercent(value) {
   if (!isFinite(value) || value < 0) return "–"
   return Math.round(value) + "%"

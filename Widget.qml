@@ -339,9 +339,8 @@ Panel {
     return last.substring(last.lastIndexOf("/") + 1)
   }
 
-  readonly property string hint: clickCommand === ""
-    ? "Hardware · right click for " + nextMode
-    : "Click for " + monitorName + " · right click for " + nextMode
+  readonly property string hint: "Click for " + (clickCommand === "" ? "panel" : monitorName)
+    + " · right click for " + nextMode + " · middle click resamples"
 
   function detail() {
     var lines = []
@@ -362,7 +361,8 @@ Panel {
       var gpu = "GPU  " + Model.formatPercent(hw.gpuPercent)
       if (hw.gpuWatts >= 0) gpu += "  ·  " + Model.formatWatts(hw.gpuWatts)
       lines.push(gpu)
-      lines.push(String(hw.gpuInfo.name))
+      // The probe's name is optional; fall back as the panel does.
+      lines.push(hw.gpuInfo.name ? String(hw.gpuInfo.name) : String(hw.gpuInfo.kind || "GPU"))
       if (hw.gpuVramTotalBytes > 0) {
         lines.push("VRAM " + Model.formatGib(Model.gibFromBytes(hw.gpuVramUsedBytes)) + " / "
                    + Model.formatGib(Model.gibFromBytes(hw.gpuVramTotalBytes)) + " GiB  ·  "

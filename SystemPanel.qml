@@ -499,162 +499,114 @@ KeyboardPanel {
           width: parent.width
           spacing: Style.space(8)
 
-          Dial {
-            id: cpuDial
-            width: (parent.width - parent.spacing * 2) / 3
+          PanelDial {
             title: "CPU"
             valueText: hw.cpuPercent >= 0 ? Math.round(hw.cpuPercent) + "%" : "–"
             subText: hw.cpuTempC > 0 ? Model.formatTemp(hw.cpuTempC, root.fahrenheit) : ""
             subTextColor: root.tempColor(hw.cpuTempC)
             ratio: hw.cpuPercent >= 0 ? hw.cpuPercent / 100 : 0
-            baseColor: root.baseColor
-            hotColor: root.hotColor
-            accentColor: Color.accent
             severity: root.cpuSeverity
-            fontFamily: root.fontFamily
           }
 
-          Dial {
-            id: memDial
-            width: (parent.width - parent.spacing * 2) / 3
+          PanelDial {
             title: "RAM"
             valueText: hw.memPercent >= 0 ? Math.round(hw.memPercent) + "%" : "–"
             subText: hw.memory ? (Model.formatGib(Model.gibFromKib(hw.memory.usedKib)) + "/" + Model.formatGib(Model.gibFromKib(hw.memory.totalKib)) + "G") : ""
             ratio: hw.memPercent >= 0 ? hw.memPercent / 100 : 0
-            baseColor: root.baseColor
-            hotColor: root.hotColor
-            accentColor: Color.accent
             severity: root.memSeverity
-            fontFamily: root.fontFamily
           }
 
-          Dial {
-            id: gpuDial
-            width: (parent.width - parent.spacing * 2) / 3
+          PanelDial {
             title: "GPU"
             valueText: hw.hasGpu ? (hw.gpuPercent >= 0 ? Math.round(hw.gpuPercent) + "%" : (hw.gpuVramPercent >= 0 ? Math.round(hw.gpuVramPercent) + "%" : "–")) : "N/A"
             subText: hw.hasGpu && hw.gpuTempC > 0 ? Model.formatTemp(hw.gpuTempC, root.fahrenheit) : (hw.hasGpu && hw.gpuWatts >= 0 ? Model.formatWatts(hw.gpuWatts) : "")
             subTextColor: root.tempColor(hw.gpuTempC)
             ratio: hw.hasGpu ? (hw.gpuPercent >= 0 ? hw.gpuPercent / 100 : (hw.gpuVramPercent >= 0 ? hw.gpuVramPercent / 100 : 0)) : 0
-            baseColor: root.baseColor
-            hotColor: root.hotColor
-            accentColor: Color.accent
             severity: hw.hasGpu ? Model.severity(hw.gpuPercent >= 0 ? hw.gpuPercent : hw.gpuVramPercent, root.warnPercent, root.criticalPercent) : 0
-            fontFamily: root.fontFamily
           }
         }
 
         // 3. CPU Load History Sparkline (60s)
-        Rectangle {
-          width: parent.width
-          implicitHeight: sparklineCol.implicitHeight + Style.space(24)
-          color: Qt.alpha(root.baseColor, 0.04)
-          border.color: Qt.alpha(root.baseColor, 0.10)
-          border.width: 1
-          radius: Style.cornerRadius
+        SectionCard {
+          spacing: Style.space(8)
 
-          Column {
-            id: sparklineCol
-            anchors.fill: parent
-            anchors.margins: Style.space(12)
-            spacing: Style.space(8)
+          InfoPair {
+            label: "CPU Load History (60s)"
+            labelColor: root.baseColor
+            value: hw.cpuPercent >= 0 ? (Math.round(hw.cpuPercent) + "% current") : "–"
+            valueColor: root.cpuColor
+            valueBold: true
+            fontSize: Style.font.caption
+          }
 
-            Row {
-              width: parent.width
+          Item {
+            id: sparklineBox
+            width: parent.width
+            height: Style.space(55)
 
-              Text {
-                textFormat: Text.PlainText
-                text: "CPU Load History (60s)"
-                color: root.baseColor
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
-                font.bold: true
-              }
+            // Background grid lines
+            Rectangle {
+              anchors.left: parent.left
+              anchors.right: parent.right
+              y: parent.height * 0.25
+              height: 1
+              color: Qt.alpha(root.baseColor, 0.08)
+            }
+            Rectangle {
+              anchors.left: parent.left
+              anchors.right: parent.right
+              y: parent.height * 0.50
+              height: 1
+              color: Qt.alpha(root.baseColor, 0.08)
+            }
+            Rectangle {
+              anchors.left: parent.left
+              anchors.right: parent.right
+              y: parent.height * 0.75
+              height: 1
+              color: Qt.alpha(root.baseColor, 0.08)
+            }
 
-              Item {
-                width: Math.max(0, parent.width - parent.children[0].implicitWidth - parent.children[2].implicitWidth)
-                height: 1
-              }
+            // Sparkline fill area
+            Shape {
+              anchors.fill: parent
+              visible: root.sparklinePoints.length >= 2
+              layer.enabled: true
+              layer.samples: 4
 
-              Text {
-                textFormat: Text.PlainText
-                text: hw.cpuPercent >= 0 ? (Math.round(hw.cpuPercent) + "% current") : "–"
-                color: root.cpuColor
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
-                font.bold: true
+              ShapePath {
+                strokeWidth: 0
+                strokeColor: "transparent"
+                fillColor: Qt.alpha(Color.accent, 0.18)
+
+                startX: root.sparklineFirst.x
+                startY: root.sparklineFirst.y
+
+                PathPolyline {
+                  path: root.sparklineFillPoints
+                }
               }
             }
 
-            Item {
-              id: sparklineBox
-              width: parent.width
-              height: Style.space(55)
+            // Sparkline stroke line
+            Shape {
+              anchors.fill: parent
+              visible: root.sparklinePoints.length >= 2
+              layer.enabled: true
+              layer.samples: 4
 
-              // Background grid lines
-              Rectangle {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                y: parent.height * 0.25
-                height: 1
-                color: Qt.alpha(root.baseColor, 0.08)
-              }
-              Rectangle {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                y: parent.height * 0.50
-                height: 1
-                color: Qt.alpha(root.baseColor, 0.08)
-              }
-              Rectangle {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                y: parent.height * 0.75
-                height: 1
-                color: Qt.alpha(root.baseColor, 0.08)
-              }
+              ShapePath {
+                strokeWidth: Style.space(2)
+                strokeColor: Color.accent
+                fillColor: "transparent"
+                capStyle: ShapePath.RoundCap
+                joinStyle: ShapePath.RoundJoin
 
-              // Sparkline fill area
-              Shape {
-                anchors.fill: parent
-                visible: root.sparklinePoints.length >= 2
-                layer.enabled: true
-                layer.samples: 4
+                startX: root.sparklineFirst.x
+                startY: root.sparklineFirst.y
 
-                ShapePath {
-                  strokeWidth: 0
-                  strokeColor: "transparent"
-                  fillColor: Qt.alpha(Color.accent, 0.18)
-
-                  startX: root.sparklineFirst.x
-                  startY: root.sparklineFirst.y
-
-                  PathPolyline {
-                    path: root.sparklineFillPoints
-                  }
-                }
-              }
-
-              // Sparkline stroke line
-              Shape {
-                anchors.fill: parent
-                visible: root.sparklinePoints.length >= 2
-                layer.enabled: true
-                layer.samples: 4
-
-                ShapePath {
-                  strokeWidth: Style.space(2)
-                  strokeColor: Color.accent
-                  fillColor: "transparent"
-                  capStyle: ShapePath.RoundCap
-                  joinStyle: ShapePath.RoundJoin
-
-                  startX: root.sparklineFirst.x
-                  startY: root.sparklineFirst.y
-
-                  PathPolyline {
-                    path: root.sparklinePoints
-                  }
+                PathPolyline {
+                  path: root.sparklinePoints
                 }
               }
             }
@@ -662,568 +614,295 @@ KeyboardPanel {
         }
 
         // 4. Processor Topology & Load Average
-        Rectangle {
-          width: parent.width
-          implicitHeight: procCol.implicitHeight + Style.space(24)
-          color: Qt.alpha(root.baseColor, 0.04)
-          border.color: Qt.alpha(root.baseColor, 0.10)
-          border.width: 1
-          radius: Style.cornerRadius
+        SectionCard {
+          icon: ""
+          title: "Processor"
 
+          Row {
+            width: parent.width
+            spacing: Style.space(16)
+
+            HalfColumn {
+              InfoPair {
+                label: "Cores"
+                value: hw.cpuInfo ? (hw.cpuInfo.cores + "C / " + hw.cpuInfo.threads + "T") : "–"
+              }
+              InfoPair {
+                label: "Avg Clock"
+                value: hw.cpuMhz > 0 ? Model.formatGhz(hw.cpuMhz) : "–"
+              }
+            }
+
+            HalfColumn {
+              InfoPair {
+                label: "Temperature"
+                value: hw.cpuTempC > 0 ? Model.formatTemp(hw.cpuTempC, root.fahrenheit) : "–"
+                valueColor: root.tempColor(hw.cpuTempC)
+              }
+              InfoPair {
+                label: "Cur Load"
+                value: hw.cpuPercent >= 0 ? Model.formatPercent(hw.cpuPercent) : "–"
+                valueColor: root.cpuColor
+              }
+            }
+          }
+
+          // Load average 1m, 5m, 15m
           Column {
-            id: procCol
-            anchors.fill: parent
-            anchors.margins: Style.space(12)
-            spacing: Style.space(10)
+            width: parent.width
+            spacing: Style.space(6)
+
+            Text {
+              textFormat: Text.PlainText
+              text: "Load Average (1m · 5m · 15m)"
+              color: root.mutedColor
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+              font.bold: true
+            }
 
             Row {
               width: parent.width
-              spacing: Style.space(6)
+              spacing: Style.space(8)
 
-              Text {
-                textFormat: Text.PlainText
-                text: ""
-                color: Color.accent
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.bodySmall
-                anchors.verticalCenter: parent.verticalCenter
-              }
-
-              Text {
-                textFormat: Text.PlainText
-                text: "Processor"
-                color: root.baseColor
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.bodySmall
-                font.bold: true
-                anchors.verticalCenter: parent.verticalCenter
-              }
-            }
-
-            // Specs
-            Row {
-              width: parent.width
-              spacing: Style.space(16)
-
-              Column {
-                width: (parent.width - parent.spacing) / 2
-                spacing: Style.spacing.labelGap
-
-                InfoPair {
-                  label: "Cores"
-                  value: hw.cpuInfo ? (hw.cpuInfo.cores + "C / " + hw.cpuInfo.threads + "T") : "–"
-                }
-                InfoPair {
-                  label: "Avg Clock"
-                  value: hw.cpuMhz > 0 ? Model.formatGhz(hw.cpuMhz) : "–"
-                }
-              }
-
-              Column {
-                width: (parent.width - parent.spacing) / 2
-                spacing: Style.spacing.labelGap
-
-                InfoPair {
-                  label: "Temperature"
-                  value: hw.cpuTempC > 0 ? Model.formatTemp(hw.cpuTempC, root.fahrenheit) : "–"
-                  valueColor: root.tempColor(hw.cpuTempC)
-                }
-                InfoPair {
-                  label: "Cur Load"
-                  value: hw.cpuPercent >= 0 ? Model.formatPercent(hw.cpuPercent) : "–"
-                  valueColor: root.cpuColor
-                }
-              }
-            }
-
-            // Load average 1m, 5m, 15m
-            Column {
-              width: parent.width
-              spacing: Style.space(6)
-
-              Text {
-                textFormat: Text.PlainText
-                text: "Load Average (1m · 5m · 15m)"
-                color: root.mutedColor
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
-                font.bold: true
-              }
-
-              Row {
-                width: parent.width
-                spacing: Style.space(8)
-
-                readonly property real maxCores: hw.cpuInfo && hw.cpuInfo.threads ? hw.cpuInfo.threads : 8
-
-                LoadMeter {
-                  id: lm1
-                  width: (parent.width - parent.spacing * 2) / 3
-                  period: "1 min"
-                  value: hw.load ? hw.load.one : 0
-                  maxVal: parent.maxCores
-                  baseColor: root.baseColor
-                  hotColor: root.hotColor
-                  fontFamily: root.fontFamily
-                }
-
-                LoadMeter {
-                  id: lm5
-                  width: (parent.width - parent.spacing * 2) / 3
-                  period: "5 min"
-                  value: hw.load ? hw.load.five : 0
-                  maxVal: parent.maxCores
-                  baseColor: root.baseColor
-                  hotColor: root.hotColor
-                  fontFamily: root.fontFamily
-                }
-
-                LoadMeter {
-                  id: lm15
-                  width: (parent.width - parent.spacing * 2) / 3
-                  period: "15 min"
-                  value: hw.load ? hw.load.fifteen : 0
-                  maxVal: parent.maxCores
-                  baseColor: root.baseColor
-                  hotColor: root.hotColor
-                  fontFamily: root.fontFamily
-                }
-              }
+              LoadMeter { period: "1 min"; value: hw.load ? hw.load.one : 0 }
+              LoadMeter { period: "5 min"; value: hw.load ? hw.load.five : 0 }
+              LoadMeter { period: "15 min"; value: hw.load ? hw.load.fifteen : 0 }
             }
           }
         }
 
         // 5. Memory & Swap Breakdown
-        Rectangle {
-          width: parent.width
-          implicitHeight: memCol.implicitHeight + Style.space(24)
-          color: Qt.alpha(root.baseColor, 0.04)
-          border.color: Qt.alpha(root.baseColor, 0.10)
-          border.width: 1
-          radius: Style.cornerRadius
+        SectionCard {
+          icon: ""
+          title: "Memory & Storage Cache"
 
+          // RAM horizontal split progress
           Column {
-            id: memCol
-            anchors.fill: parent
-            anchors.margins: Style.space(12)
-            spacing: Style.space(10)
+            width: parent.width
+            spacing: Style.space(4)
 
-            Row {
-              width: parent.width
-              spacing: Style.space(6)
+            InfoPair {
+              label: "RAM Usage"
+              value: hw.memory ? (Model.formatGib(Model.gibFromKib(hw.memory.usedKib)) + " / " + Model.formatGib(Model.gibFromKib(hw.memory.totalKib)) + " GiB (" + Math.round(hw.memPercent) + "%)") : "–"
+              valueColor: root.memColor
+              valueBold: true
+              fontSize: Style.font.caption
+            }
 
-              Text {
-                textFormat: Text.PlainText
-                text: ""
-                color: Color.accent
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.bodySmall
-                anchors.verticalCenter: parent.verticalCenter
+            MeterBar {
+              ratio: hw.memPercent >= 0 ? hw.memPercent / 100 : -1
+              fillColor: root.memColor
+            }
+          }
+
+          // Details
+          Row {
+            width: parent.width
+            spacing: Style.space(16)
+
+            HalfColumn {
+              InfoPair {
+                label: "Available"
+                value: hw.memory ? (Model.formatGib(Model.gibFromKib(hw.memory.availableKib)) + " GiB") : "–"
               }
-
-              Text {
-                textFormat: Text.PlainText
-                text: "Memory & Storage Cache"
-                color: root.baseColor
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.bodySmall
-                font.bold: true
-                anchors.verticalCenter: parent.verticalCenter
+              InfoPair {
+                label: "Page Cache"
+                value: hw.memory ? (Model.formatGib(Model.gibFromKib(hw.memory.cachedKib)) + " GiB") : "–"
               }
             }
 
-            // RAM horizontal split progress
-            Column {
-              width: parent.width
-              spacing: Style.space(4)
-
-              Row {
-                width: parent.width
-
-                Text {
-                  textFormat: Text.PlainText
-                  text: "RAM Usage"
-                  color: root.mutedColor
-                  font.family: root.fontFamily
-                  font.pixelSize: Style.font.caption
-                  font.bold: true
-                }
-
-                Item {
-                  width: Math.max(0, parent.width - parent.children[0].implicitWidth - parent.children[2].implicitWidth)
-                  height: 1
-                }
-
-                Text {
-                  textFormat: Text.PlainText
-                  text: hw.memory ? (Model.formatGib(Model.gibFromKib(hw.memory.usedKib)) + " / " + Model.formatGib(Model.gibFromKib(hw.memory.totalKib)) + " GiB (" + Math.round(hw.memPercent) + "%)") : "–"
-                  color: root.memColor
-                  font.family: root.fontFamily
-                  font.pixelSize: Style.font.caption
-                  font.bold: true
-                }
+            HalfColumn {
+              InfoPair {
+                label: "Swap Used"
+                value: hw.memory && hw.memory.swapTotalKib > 0 ? (Model.formatGib(Model.gibFromKib(hw.memory.swapUsedKib)) + " GiB") : "0 GiB"
               }
-
-              Rectangle {
-                width: parent.width
-                height: Style.space(6)
-                radius: height / 2
-                color: Qt.alpha(root.baseColor, 0.12)
-
-                Rectangle {
-                  anchors.left: parent.left
-                  anchors.top: parent.top
-                  anchors.bottom: parent.bottom
-                  radius: parent.radius
-                  color: root.memColor
-                  width: hw.memPercent >= 0 ? Math.max(parent.height, Math.min(parent.width, parent.width * (hw.memPercent / 100))) : 0
-                  Behavior on width { NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
-                }
-              }
-            }
-
-            // Details
-            Row {
-              width: parent.width
-              spacing: Style.space(16)
-
-              Column {
-                width: (parent.width - parent.spacing) / 2
-                spacing: Style.spacing.labelGap
-
-                InfoPair {
-                  label: "Available"
-                  value: hw.memory ? (Model.formatGib(Model.gibFromKib(hw.memory.availableKib)) + " GiB") : "–"
-                }
-                InfoPair {
-                  label: "Page Cache"
-                  value: hw.memory ? (Model.formatGib(Model.gibFromKib(hw.memory.cachedKib)) + " GiB") : "–"
-                }
-              }
-
-              Column {
-                width: (parent.width - parent.spacing) / 2
-                spacing: Style.spacing.labelGap
-
-                InfoPair {
-                  label: "Swap Used"
-                  value: hw.memory && hw.memory.swapTotalKib > 0 ? (Model.formatGib(Model.gibFromKib(hw.memory.swapUsedKib)) + " GiB") : "0 GiB"
-                }
-                InfoPair {
-                  label: "Swap Total"
-                  value: hw.memory && hw.memory.swapTotalKib > 0 ? (Model.formatGib(Model.gibFromKib(hw.memory.swapTotalKib)) + " GiB") : "None"
-                }
+              InfoPair {
+                label: "Swap Total"
+                value: hw.memory && hw.memory.swapTotalKib > 0 ? (Model.formatGib(Model.gibFromKib(hw.memory.swapTotalKib)) + " GiB") : "None"
               }
             }
           }
         }
 
         // 5b. Top Processes by RAM (only while the panel is open)
-        Rectangle {
-          width: parent.width
-          implicitHeight: topProcCol.implicitHeight + Style.space(24)
-          color: Qt.alpha(root.baseColor, 0.04)
-          border.color: Qt.alpha(root.baseColor, 0.10)
-          border.width: 1
-          radius: Style.cornerRadius
+        SectionCard {
+          icon: ""
+          title: "Top processi"
+          spacing: Style.space(8)
           visible: root.showTopProcs
           opacity: hw.procTopFailed && hw.topProcs.length === 0 ? 0.7 : 1
 
+          headerItems: [
+            ModeChip {
+              label: "RAM"
+              selected: hw.topProcSort === "ram"
+              anchors.verticalCenter: parent.verticalCenter
+              onPicked: root.persistSetting("topProcSort", "ram")
+            },
+            ModeChip {
+              label: "CPU"
+              selected: hw.topProcSort === "cpu"
+              anchors.verticalCenter: parent.verticalCenter
+              onPicked: root.persistSetting("topProcSort", "cpu")
+            },
+            ModeChip {
+              label: "Raggruppa"
+              selected: hw.topProcGroup
+              anchors.verticalCenter: parent.verticalCenter
+              onPicked: root.persistSetting("topProcGroup", !hw.topProcGroup)
+            }
+          ]
+
+          headerTrailing: Text {
+            id: procTopStamp
+            textFormat: Text.PlainText
+            text: {
+              var h = hw
+              var metric = h.topProcSort === "cpu" ? "per CPU" : "per RAM"
+              // Grouping found no systemd app identity and fell back to
+              // process names: say so, the Group chip alone can't.
+              if (h.topProcGroup && h.procGroupedBy === "comm") metric += " \u00b7 by name"
+              if (h.procTopTime === "") return metric
+              return metric + " \u00b7 " + h.procTopTime
+            }
+            color: root.mutedColor
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.caption
+            font.bold: true
+          }
+
           Column {
-            id: topProcCol
-            anchors.fill: parent
-            anchors.margins: Style.space(12)
-            spacing: Style.space(8)
+            width: parent.width
+            spacing: Style.space(6)
+            visible: hw.topProcs.length > 0
 
-            Row {
-              width: parent.width
-              spacing: Style.space(6)
+            Repeater {
+              model: hw.topProcs
+              delegate: Column {
+                required property var modelData
+                required property int index
 
-              Text {
-                id: procTopIcon
-                textFormat: Text.PlainText
-                text: "\uf03a"
-                color: Color.accent
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.bodySmall
-                anchors.verticalCenter: parent.verticalCenter
-              }
+                width: parent.width
+                spacing: Style.space(3)
 
-              Text {
-                textFormat: Text.PlainText
-                text: "Top processi"
-                color: root.baseColor
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.bodySmall
-                font.bold: true
-                anchors.verticalCenter: parent.verticalCenter
-              }
+                readonly property int total: hw.topProcs.length
+                readonly property bool sortCpu: hw.topProcSort === "cpu"
+                readonly property real topRss: total > 0 ? Math.max(1, hw.topProcs[0].rssKib) : 1
+                readonly property real topCpu: total > 0 ? Math.max(0, hw.topProcs[0].cpu) : 0
+                readonly property bool useCpuBars: sortCpu && topCpu > 0
+                readonly property real metricVal: sortCpu ? modelData.cpu : modelData.memPct
+                readonly property real shareD: useCpuBars ? modelData.cpu / Math.max(1, topCpu) : modelData.rssKib / topRss
+                readonly property real rankSev: total > 1 ? (1 - index / (total - 1)) : 1
+                readonly property real combinedSev: Math.max(0.35 + 0.65 * rankSev,
+                  Model.severity(metricVal, root.warnPercent, root.criticalPercent))
+                // Rows ramp from the base colour toward the theme accent, never
+                // toward urgent: a ranking should read clearly without alarming.
+                readonly property color sevColor: Model.mixColor(root.baseColor, Color.accent, combinedSev)
 
-              ModeChip {
-                id: sortRamChip
-                label: "RAM"
-                selected: hw.topProcSort === "ram"
-                anchors.verticalCenter: parent.verticalCenter
-                onPicked: root.persistSetting("topProcSort", "ram")
-              }
-
-              ModeChip {
-                id: sortCpuChip
-                label: "CPU"
-                selected: hw.topProcSort === "cpu"
-                anchors.verticalCenter: parent.verticalCenter
-                onPicked: root.persistSetting("topProcSort", "cpu")
-              }
-
-              ModeChip {
-                id: groupChip
-                label: "Raggruppa"
-                selected: hw.topProcGroup
-                anchors.verticalCenter: parent.verticalCenter
-                onPicked: root.persistSetting("topProcGroup", !hw.topProcGroup)
-              }
-
-              Item {
-                width: Math.max(0, parent.width - procTopIcon.implicitWidth - parent.children[1].implicitWidth - sortRamChip.implicitWidth - sortCpuChip.implicitWidth - groupChip.implicitWidth - procTopStamp.implicitWidth - parent.spacing * 6)
-                height: 1
-              }
-
-              Text {
-                id: procTopStamp
-                textFormat: Text.PlainText
-                text: {
-                  var h = hw
-                  var metric = h.topProcSort === "cpu" ? "per CPU" : "per RAM"
-                  // Grouping found no systemd app identity and fell back to
-                  // process names: say so, the Group chip alone can't.
-                  if (h.topProcGroup && h.procGroupedBy === "comm") metric += " \u00b7 by name"
-                  if (h.procTopTime === "") return metric
-                  return metric + " \u00b7 " + h.procTopTime
-                }
-                color: root.mutedColor
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
-                font.bold: true
-                anchors.verticalCenter: parent.verticalCenter
-              }
-            }
-
-            Column {
-              width: parent.width
-              spacing: Style.space(6)
-              visible: hw.topProcs.length > 0
-
-              Repeater {
-                model: hw.topProcs
-                delegate: Column {
-                  required property var modelData
-                  required property int index
-
+                Row {
                   width: parent.width
-                  spacing: Style.space(3)
+                  spacing: Style.space(6)
 
-                  readonly property int total: hw.topProcs.length
-                  readonly property bool sortCpu: hw.topProcSort === "cpu"
-                  readonly property real topRss: total > 0 ? Math.max(1, hw.topProcs[0].rssKib) : 1
-                  readonly property real topCpu: total > 0 ? Math.max(0, hw.topProcs[0].cpu) : 0
-                  readonly property bool useCpuBars: sortCpu && topCpu > 0
-                  readonly property real metricVal: sortCpu ? modelData.cpu : modelData.memPct
-                  readonly property real shareD: useCpuBars ? modelData.cpu / Math.max(1, topCpu) : modelData.rssKib / topRss
-                  readonly property real rankSev: total > 1 ? (1 - index / (total - 1)) : 1
-                  readonly property real combinedSev: Math.max(0.35 + 0.65 * rankSev,
-                    Model.severity(metricVal, root.warnPercent, root.criticalPercent))
-                  // Rows ramp from the base colour toward the theme accent, never
-                  // toward urgent: a ranking should read clearly without alarming.
-                  readonly property color sevColor: Model.mixColor(root.baseColor, Color.accent, combinedSev)
-
-                  Row {
-                    width: parent.width
-                    spacing: Style.space(6)
-
-                    Text {
-                      id: procRank
-                      textFormat: Text.PlainText
-                      text: (index + 1) + "."
-                      color: sevColor
-                      font.family: root.fontFamily
-                      font.pixelSize: Style.font.bodySmall
-                      font.bold: true
-                      anchors.verticalCenter: parent.verticalCenter
-                    }
-
-                    Text {
-                      textFormat: Text.PlainText
-                      width: Math.max(40, parent.width - procRank.implicitWidth - procFigs.implicitWidth - parent.spacing * 2)
-                      elide: Text.ElideRight
-                      text: modelData.count > 1 ? (modelData.name + "  \u00b7 " + modelData.count + " processi") : (modelData.name + "  (" + modelData.pid + ")")
-                      color: root.baseColor
-                      font.family: root.fontFamily
-                      font.pixelSize: Style.font.bodySmall
-                      anchors.verticalCenter: parent.verticalCenter
-                    }
-
-                    Text {
-                      id: procFigs
-                      textFormat: Text.PlainText
-                      anchors.verticalCenter: parent.verticalCenter
-                      text: Model.formatGib(Model.gibFromKib(modelData.rssKib)) + " GiB \u00b7 CPU " + Math.round(modelData.cpu) + "%"
-                      color: sevColor
-                      font.family: root.fontFamily
-                      font.pixelSize: Style.font.caption
-                      font.bold: true
-                    }
+                  Text {
+                    id: procRank
+                    textFormat: Text.PlainText
+                    text: (index + 1) + "."
+                    color: sevColor
+                    font.family: root.fontFamily
+                    font.pixelSize: Style.font.bodySmall
+                    font.bold: true
+                    anchors.verticalCenter: parent.verticalCenter
                   }
 
-                  Rectangle {
-                    width: parent.width
-                    height: Style.space(5)
-                    radius: height / 2
-                    color: Qt.alpha(root.baseColor, 0.12)
-
-                    Rectangle {
-                      anchors.left: parent.left
-                      anchors.top: parent.top
-                      anchors.bottom: parent.bottom
-                      radius: parent.radius
-                      color: sevColor
-                      width: Math.max(parent.height, Math.min(parent.width, parent.width * shareD))
-                      Behavior on width { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
-                    }
+                  Text {
+                    textFormat: Text.PlainText
+                    width: Math.max(40, parent.width - procRank.implicitWidth - procFigs.implicitWidth - parent.spacing * 2)
+                    elide: Text.ElideRight
+                    text: modelData.count > 1 ? (modelData.name + "  · " + modelData.count + " processi") : (modelData.name + "  (" + modelData.pid + ")")
+                    color: root.baseColor
+                    font.family: root.fontFamily
+                    font.pixelSize: Style.font.bodySmall
+                    anchors.verticalCenter: parent.verticalCenter
                   }
+
+                  Text {
+                    id: procFigs
+                    textFormat: Text.PlainText
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: Model.formatGib(Model.gibFromKib(modelData.rssKib)) + " GiB · CPU " + Math.round(modelData.cpu) + "%"
+                    color: sevColor
+                    font.family: root.fontFamily
+                    font.pixelSize: Style.font.caption
+                    font.bold: true
+                  }
+                }
+
+                MeterBar {
+                  height: Style.space(5)
+                  ratio: shareD
+                  fillColor: sevColor
                 }
               }
             }
+          }
 
-            Text {
-              textFormat: Text.PlainText
-              visible: hw.topProcs.length === 0
-              width: parent.width
-              wrapMode: Text.Wrap
-              text: hw.procTopFailed ? "Dati processi non disponibili (python3 assente o lettura fallita)." : "Raccolta dati processi\u2026"
-              color: root.mutedColor
-              font.family: root.fontFamily
-              font.pixelSize: Style.font.caption
-            }
+          Text {
+            textFormat: Text.PlainText
+            visible: hw.topProcs.length === 0
+            width: parent.width
+            wrapMode: Text.Wrap
+            text: hw.procTopFailed ? "Dati processi non disponibili (python3 assente o lettura fallita)." : "Raccolta dati processi…"
+            color: root.mutedColor
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.caption
           }
         }
 
         // 6. Graphics Telemetry Section (if GPU present)
-        Rectangle {
-          width: parent.width
-          implicitHeight: gpuCol.implicitHeight + Style.space(24)
-          color: Qt.alpha(root.baseColor, 0.04)
-          border.color: Qt.alpha(root.baseColor, 0.10)
-          border.width: 1
-          radius: Style.cornerRadius
+        SectionCard {
+          icon: "󰾲"
+          title: hw.gpuInfo && hw.gpuInfo.name ? hw.gpuInfo.name : "Graphics Adapter"
           visible: hw.hasGpu
 
+          // VRAM Meter
           Column {
-            id: gpuCol
-            anchors.fill: parent
-            anchors.margins: Style.space(12)
-            spacing: Style.space(10)
+            width: parent.width
+            spacing: Style.space(4)
+            visible: hw.gpuVramTotalBytes > 0
 
-            Row {
-              width: parent.width
-              spacing: Style.space(6)
-
-              Text {
-                textFormat: Text.PlainText
-                text: "󰾲"
-                color: Color.accent
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.bodySmall
-                anchors.verticalCenter: parent.verticalCenter
-              }
-
-              Text {
-                textFormat: Text.PlainText
-                text: hw.gpuInfo && hw.gpuInfo.name ? hw.gpuInfo.name : "Graphics Adapter"
-                color: root.baseColor
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.bodySmall
-                font.bold: true
-                wrapMode: Text.Wrap
-                anchors.verticalCenter: parent.verticalCenter
-              }
+            InfoPair {
+              label: "VRAM"
+              value: hw.gpuVramTotalBytes > 0 ? (Model.formatGib(Model.gibFromBytes(hw.gpuVramUsedBytes)) + " / " + Model.formatGib(Model.gibFromBytes(hw.gpuVramTotalBytes)) + " GiB (" + Math.round(hw.gpuVramPercent) + "%)") : "–"
+              valueColor: root.vramColor
+              valueBold: true
+              fontSize: Style.font.caption
             }
 
-            // VRAM Meter
-            Column {
-              width: parent.width
-              spacing: Style.space(4)
-              visible: hw.gpuVramTotalBytes > 0
+            MeterBar {
+              ratio: hw.gpuVramPercent >= 0 ? hw.gpuVramPercent / 100 : -1
+              fillColor: root.vramColor
+            }
+          }
 
-              Row {
-                width: parent.width
+          Row {
+            width: parent.width
+            spacing: Style.space(16)
 
-                Text {
-                  textFormat: Text.PlainText
-                  text: "VRAM"
-                  color: root.mutedColor
-                  font.family: root.fontFamily
-                  font.pixelSize: Style.font.caption
-                  font.bold: true
-                }
-
-                Item {
-                  width: Math.max(0, parent.width - parent.children[0].implicitWidth - parent.children[2].implicitWidth)
-                  height: 1
-                }
-
-                Text {
-                  textFormat: Text.PlainText
-                  text: hw.gpuVramTotalBytes > 0 ? (Model.formatGib(Model.gibFromBytes(hw.gpuVramUsedBytes)) + " / " + Model.formatGib(Model.gibFromBytes(hw.gpuVramTotalBytes)) + " GiB (" + Math.round(hw.gpuVramPercent) + "%)") : "–"
-                  color: root.vramColor
-                  font.family: root.fontFamily
-                  font.pixelSize: Style.font.caption
-                  font.bold: true
-                }
+            HalfColumn {
+              InfoPair { label: "Load"; value: hw.gpuPercent >= 0 ? Model.formatPercent(hw.gpuPercent) : "–" }
+              InfoPair {
+                label: "Temperature"
+                value: hw.gpuTempC > 0 ? Model.formatTemp(hw.gpuTempC, root.fahrenheit) : "–"
+                valueColor: root.tempColor(hw.gpuTempC)
               }
-
-              Rectangle {
-                width: parent.width
-                height: Style.space(6)
-                radius: height / 2
-                color: Qt.alpha(root.baseColor, 0.12)
-
-                Rectangle {
-                  anchors.left: parent.left
-                  anchors.top: parent.top
-                  anchors.bottom: parent.bottom
-                  radius: parent.radius
-                  color: root.vramColor
-                  width: hw.gpuVramPercent >= 0 ? Math.max(parent.height, Math.min(parent.width, parent.width * (hw.gpuVramPercent / 100))) : 0
-                  Behavior on width { NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
-                }
-              }
+              InfoPair { label: "Power"; value: hw.gpuWatts >= 0 ? Model.formatWatts(hw.gpuWatts) : "–" }
             }
 
-            Row {
-              width: parent.width
-              spacing: Style.space(16)
-
-              Column {
-                width: (parent.width - parent.spacing) / 2
-                spacing: Style.spacing.labelGap
-
-                InfoPair { label: "Load"; value: hw.gpuPercent >= 0 ? Model.formatPercent(hw.gpuPercent) : "–" }
-                InfoPair {
-                  label: "Temperature"
-                  value: hw.gpuTempC > 0 ? Model.formatTemp(hw.gpuTempC, root.fahrenheit) : "–"
-                  valueColor: root.tempColor(hw.gpuTempC)
-                }
-                InfoPair { label: "Power"; value: hw.gpuWatts >= 0 ? Model.formatWatts(hw.gpuWatts) : "–" }
-              }
-
-              Column {
-                width: (parent.width - parent.spacing) / 2
-                spacing: Style.spacing.labelGap
-
-                InfoPair { label: "Clock"; value: hw.gpuMhz > 0 ? Model.formatGhz(hw.gpuMhz) : "–" }
-                InfoPair { label: "Fan"; value: hw.gpuRpm >= 0 ? Model.formatRpm(hw.gpuRpm) : "–" }
-                InfoPair { label: "Driver"; value: hw.gpuInfo && hw.gpuInfo.kind ? String(hw.gpuInfo.kind) : "–" }
-              }
+            HalfColumn {
+              InfoPair { label: "Clock"; value: hw.gpuMhz > 0 ? Model.formatGhz(hw.gpuMhz) : "–" }
+              InfoPair { label: "Fan"; value: hw.gpuRpm >= 0 ? Model.formatRpm(hw.gpuRpm) : "–" }
+              InfoPair { label: "Driver"; value: hw.gpuInfo && hw.gpuInfo.kind ? String(hw.gpuInfo.kind) : "–" }
             }
           }
         }
@@ -1278,91 +957,169 @@ KeyboardPanel {
     }
   }
 
-  component InfoPair: Row {
+  // A panel section: a tinted card with an icon + title header over a column
+  // of content. A card without a title has no header row.
+  component SectionCard: Rectangle {
+    id: card
+    property string icon: ""
+    property string title: ""
+    // Extra header items: placed after the title, or against the right edge.
+    property alias headerItems: titleRow.data
+    property alias headerTrailing: trailingRow.data
+    property alias spacing: body.spacing
+    default property alias content: body.data
+
+    width: parent.width
+    implicitHeight: body.implicitHeight + Style.space(24)
+    color: Qt.alpha(root.baseColor, 0.04)
+    border.color: Qt.alpha(root.baseColor, 0.10)
+    border.width: 1
+    radius: Style.cornerRadius
+
+    Column {
+      id: body
+      anchors.fill: parent
+      anchors.margins: Style.space(12)
+      spacing: Style.space(10)
+
+      Item {
+        visible: card.title !== ""
+        width: parent.width
+        implicitHeight: Math.max(titleRow.implicitHeight, trailingRow.implicitHeight)
+
+        Row {
+          id: titleRow
+          anchors.verticalCenter: parent.verticalCenter
+          spacing: Style.space(6)
+
+          Text {
+            textFormat: Text.PlainText
+            text: card.icon
+            color: Color.accent
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.bodySmall
+            anchors.verticalCenter: parent.verticalCenter
+          }
+
+          Text {
+            textFormat: Text.PlainText
+            text: card.title
+            color: root.baseColor
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.bodySmall
+            font.bold: true
+            anchors.verticalCenter: parent.verticalCenter
+          }
+        }
+
+        Row {
+          id: trailingRow
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
+          spacing: Style.space(6)
+        }
+      }
+    }
+  }
+
+  // A label on the left and its value against the right edge. Defaults suit
+  // a detail row; meter headers use the caption size with a bold value.
+  component InfoPair: Item {
     id: infoPairRoot
     property string label: ""
     property string value: ""
+    property color labelColor: root.mutedColor
     property color valueColor: root.baseColor
+    property int fontSize: Style.font.bodySmall
+    property bool labelBold: true
+    property bool valueBold: false
 
     width: parent.width
-    spacing: Style.space(8)
+    implicitHeight: Math.max(labelText.implicitHeight, valueText.implicitHeight)
 
     Text {
+      id: labelText
       textFormat: Text.PlainText
       text: infoPairRoot.label
-      color: root.mutedColor
+      color: infoPairRoot.labelColor
       font.family: root.fontFamily
-      font.pixelSize: Style.font.bodySmall
-      font.bold: true
-    }
-
-    Item {
-      width: Math.max(0, parent.width - parent.children[0].implicitWidth - parent.children[2].implicitWidth - parent.spacing * 2)
-      height: 1
+      font.pixelSize: infoPairRoot.fontSize
+      font.bold: infoPairRoot.labelBold
     }
 
     Text {
+      id: valueText
+      anchors.right: parent.right
       textFormat: Text.PlainText
       text: infoPairRoot.value
       color: infoPairRoot.valueColor
       font.family: root.fontFamily
-      font.pixelSize: Style.font.bodySmall
+      font.pixelSize: infoPairRoot.fontSize
+      font.bold: infoPairRoot.valueBold
       Behavior on color { ColorAnimation { duration: 240 } }
     }
   }
 
+  // One column of a two-column block of InfoPairs.
+  component HalfColumn: Column {
+    width: (parent.width - parent.spacing) / 2
+    spacing: Style.spacing.labelGap
+  }
+
+  // A track filled to `ratio` (0..1). A negative ratio means there is no
+  // reading and leaves the track empty; a reading of zero still shows a dot.
+  component MeterBar: Rectangle {
+    id: meter
+    property real ratio: -1
+    property color fillColor: root.baseColor
+
+    width: parent.width
+    height: Style.space(6)
+    radius: height / 2
+    color: Qt.alpha(root.baseColor, 0.12)
+
+    Rectangle {
+      anchors.left: parent.left
+      anchors.top: parent.top
+      anchors.bottom: parent.bottom
+      radius: parent.radius
+      color: meter.fillColor
+      width: meter.ratio >= 0 ? Math.max(parent.height, Math.min(parent.width, parent.width * meter.ratio)) : 0
+      Behavior on width { NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
+    }
+  }
+
+  // A Dial taking a third of its row, in the panel's colours.
+  component PanelDial: Dial {
+    width: (parent.width - parent.spacing * 2) / 3
+    baseColor: root.baseColor
+    hotColor: root.hotColor
+    fontFamily: root.fontFamily
+  }
+
+  // One load-average figure, a third of its row, measured against the
+  // thread count (8 until the probe reports it).
   component LoadMeter: Column {
     id: meterRoot
     property string period: ""
     property real value: 0
-    property real maxVal: 8
-    property color baseColor: Color.foreground
-    property color hotColor: Color.urgent
-    property string fontFamily: Style.font.family
+    readonly property real ratio: value / (hw.cpuInfo && hw.cpuInfo.threads ? hw.cpuInfo.threads : 8)
 
+    width: (parent.width - parent.spacing * 2) / 3
     spacing: Style.space(4)
 
-    Row {
-      width: parent.width
-
-      Text {
-        textFormat: Text.PlainText
-        text: meterRoot.period
-        color: Qt.darker(meterRoot.baseColor, 1.4)
-        font.family: meterRoot.fontFamily
-        font.pixelSize: Style.font.caption
-      }
-
-      Item {
-        width: Math.max(0, parent.width - parent.children[0].implicitWidth - parent.children[2].implicitWidth)
-        height: 1
-      }
-
-      Text {
-        textFormat: Text.PlainText
-        text: meterRoot.value.toFixed(2)
-        color: meterRoot.baseColor
-        font.family: meterRoot.fontFamily
-        font.pixelSize: Style.font.caption
-        font.bold: true
-      }
+    InfoPair {
+      label: meterRoot.period
+      labelBold: false
+      value: meterRoot.value.toFixed(2)
+      valueBold: true
+      fontSize: Style.font.caption
     }
 
-    Rectangle {
-      width: parent.width
+    MeterBar {
       height: Style.space(4)
-      radius: height / 2
-      color: Qt.alpha(meterRoot.baseColor, 0.12)
-
-      Rectangle {
-        anchors.left: parent.left
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        radius: parent.radius
-        color: Model.mixColor(meterRoot.baseColor, meterRoot.hotColor, meterRoot.maxVal > 0 ? meterRoot.value / meterRoot.maxVal : 0)
-        width: meterRoot.maxVal > 0 ? Math.max(parent.height, Math.min(parent.width, parent.width * Math.min(1, meterRoot.value / meterRoot.maxVal))) : 0
-        Behavior on width { NumberAnimation { duration: 240 } }
-      }
+      ratio: meterRoot.ratio
+      fillColor: Model.mixColor(root.baseColor, root.hotColor, meterRoot.ratio)
     }
   }
 }

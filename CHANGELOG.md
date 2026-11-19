@@ -210,6 +210,9 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 - A top-process row whose name needs a fallback font (CJK, for example) is no
   longer 2 px taller than the others, so the panel no longer shifts when such
   a row enters or leaves the list.
+- IPC `status` answers from a placement that samples. With `monitors` set, the
+  call could reach a placement hidden on another screen and print only
+  "CPU  –" (or that placement's stale figures).
 
 ## 1.2.1 — 2026-10-16
 

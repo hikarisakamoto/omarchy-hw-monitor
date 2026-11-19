@@ -407,6 +407,24 @@ Panel {
     if (hw.active) hw.sample()
   }
 
+  // Whether this placement samples; false while `monitors` hides it.
+  function isSampling() { return hw.active }
+
+  // IPC `status` reaches one placement, which may be one `monitors` hides and
+  // whose readings are empty or stale. Answer from a placement that samples,
+  // and with none (or no host to ask) from this one's own readings.
+  function statusText() {
+    if (hw.active) return detail()
+    var items = bar && typeof bar.moduleWidgets === "function"
+      ? bar.moduleWidgets(moduleName) : []
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i]
+      if (item && item !== root && typeof item.isSampling === "function"
+          && typeof item.detail === "function" && item.isSampling()) return item.detail()
+    }
+    return detail()
+  }
+
   // Save one key into this widget's shell.json entry, keeping its other keys.
   // The host's updateEntryInline is keyed by widget id, so if the widget is
   // placed more than once, every placement receives this instance's entry.
@@ -450,7 +468,7 @@ Panel {
     function toggleFahrenheit(): void { root.toggleFahrenheit() }
     function refresh(): void { root.broadcast("refresh") }
     function cycleMode(): void { root.cycleMode() }
-    function status(): string { return root.detail() }
+    function status(): string { return root.statusText() }
   }
 
   // ------------------------------------------------------------------ layout

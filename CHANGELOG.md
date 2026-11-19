@@ -88,6 +88,11 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   makes discovery lose every sensor: `hw-probe` gives it 5 seconds, then
   reports the CPU and the other GPUs without the NVIDIA card instead of
   printing nothing, and no stuck `nvidia-smi` is left behind on each retry.
+- With several GPUs that report load (for example an AMD integrated and an AMD
+  discrete card), `gpu: "auto"` picks the one with the most video memory
+  instead of whichever the kernel numbered last. On such machines a numeric
+  `gpu` position may now point at the other card; a card id or name substring
+  (`"card0"`, `"9070"`) is unaffected.
 - A GPU whose `pci.ids` entry has no bracketed marketing name is named from
   that entry alone. Such AMD cards (Phoenix1, Lucienne...) were all named
   "AMD/ATI" and can now be told apart and selected by name; such Intel and

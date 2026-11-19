@@ -186,7 +186,11 @@ gpu_temp_for() {
   [[ -r $hw/temp1_input ]] && printf '%s' "$hw/temp1_input"
 }
 
-gpu_entries=()
+# Cards with a load counter, ranked by video memory (busy_vram runs parallel
+# to busy_entries), and the cards that report only a temperature.
+busy_entries=()
+busy_vram=()
+other_entries=()
 
 for card in /sys/class/drm/card[0-9]*; do
   # Connectors are siblings named card1-DP-1; only the card itself has a device.
@@ -247,13 +251,26 @@ for card in /sys/class/drm/card[0-9]*; do
   entry+="}"
 
   # Cards that report load sort first: on a laptop with an iGPU and a dGPU the
-  # one with a busy counter is the one the user means by "GPU".
+  # one with a busy counter is the one the user means by "GPU". When several
+  # report load (an AMD iGPU beside an AMD dGPU), the one with the most video
+  # memory goes first: card numbers are only the order the driver bound them
+  # in, and the card with the most dedicated memory is the discrete one. Equal
+  # totals keep discovery order; temperature-only cards follow.
   if [[ -n $busy_path ]]; then
-    gpu_entries=("$entry" "${gpu_entries[@]+"${gpu_entries[@]}"}")
+    vram=$(read_first "$dev/mem_info_vram_total" || true)
+    # 18 digits keeps bash's 64-bit arithmetic safe; 10# stops a leading zero
+    # from reading as octal. A missing or garbled total ranks as 0.
+    if [[ $vram =~ ^[0-9]{1,18}$ ]]; then vram=$((10#$vram)); else vram=0; fi
+    # Insert before the first card with strictly less memory.
+    at=0
+    while ((at < ${#busy_vram[@]})) && ((vram <= busy_vram[at])); do at=$((at + 1)); done
+    busy_entries=(${busy_entries[@]+"${busy_entries[@]:0:at}"} "$entry" ${busy_entries[@]+"${busy_entries[@]:at}"})
+    busy_vram=(${busy_vram[@]+"${busy_vram[@]:0:at}"} "$vram" ${busy_vram[@]+"${busy_vram[@]:at}"})
   else
-    gpu_entries+=("$entry")
+    other_entries+=("$entry")
   fi
 done
+gpu_entries=(${busy_entries[@]+"${busy_entries[@]}"} ${other_entries[@]+"${other_entries[@]}"})
 
 # NVIDIA reports nothing useful through sysfs, so it gets sampled by polling
 # nvidia-smi instead. Declared last: a sysfs-capable card is always cheaper.

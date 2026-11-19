@@ -148,23 +148,11 @@ Panel {
   readonly property color dim: Qt.darker(base, 1.45)
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
 
-  function warm(from, amount) {
-    if (!(amount > 0)) return from
-    var t = Math.min(1, amount)
-    return Qt.rgba(from.r + (hot.r - from.r) * t,
-                   from.g + (hot.g - from.g) * t,
-                   from.b + (hot.b - from.b) * t,
-                   from.a)
-  }
-
+  // Dim up to warnTempC, then from the plain foreground toward urgent as the
+  // reading climbs to criticalTempC.
   function tempColor(tempC) {
-    if (!isFinite(tempC) || tempC <= 0) return dim
-    if (tempC < 50) return dim
-    var t = Math.min(1, Math.max(0, (tempC - 50) / Math.max(1, criticalTempC - 50)))
-    return Qt.rgba(base.r + (hot.r - base.r) * t,
-                   base.g + (hot.g - base.g) * t,
-                   base.b + (hot.b - base.b) * t,
-                   base.a)
+    if (!(tempC > warnTempC)) return dim
+    return Model.mixColor(base, hot, Model.severity(tempC, warnTempC, criticalTempC))
   }
 
   readonly property int percentSlot: Math.ceil(percentMetrics.advanceWidth)
@@ -561,8 +549,8 @@ Panel {
       // Temperatures follow their own ramp; load figures warm with severity.
       readonly property color tone: isTempCell
         ? root.tempColor(info.tempC)
-        : root.warm(root.base, info.severity)
-      readonly property color dimTone: root.warm(root.dim, info.severity)
+        : Model.mixColor(root.base, root.hot, info.severity)
+      readonly property color dimTone: Model.mixColor(root.dim, root.hot, info.severity)
       spacing: Style.space(4)
 
       // Every figure cell reserves its slot width: a single-digit value keeps

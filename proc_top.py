@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Top-N processes by RSS memory or CPU, optionally grouped per application.
+"""Top-N processes by resident memory or CPU, optionally grouped per application.
 
 Usage: proc_top.py [--top N] [--sort ram|cpu] [--group]
 Output: {"groupedBy": "none"|"scope"|"comm", "procs": [{"pid": 1234,
@@ -7,6 +7,8 @@ Output: {"groupedBy": "none"|"scope"|"comm", "procs": [{"pid": 1234,
   "memPct": 5.3}]}
 Pipeline: collect -> group -> sum -> sort -> cut. CPU is normalised to the
 whole system (100% = all cores), measured across two reads ~400 ms apart.
+rssKib is a process's RSS; for a group it is an estimate that counts shared
+pages once (see make_row), so it can differ from PSS either way.
 Grouping: systemd identity from the deepest token (scope/service; containers
 such as app-graphical.slice skipped; cleaned-up pretty name); fallback to an
 equal comm; sep-prefix merge ("orca" absorbs "orca-ide"). Without an
@@ -143,8 +145,8 @@ def list_pids() -> list[int]:
     return [int(e) for e in entries if e.isdigit()][:PID_CAP]
 
 
-def read_stat(pid: int) -> tuple[str, int, int]:
-    """(comm, utime+stime ticks, rss_pages) from /proc/<pid>/stat.
+def read_stat(pid: int) -> tuple[str, int]:
+    """(comm, utime+stime ticks) from /proc/<pid>/stat.
 
     comm is the parenthesised field and may itself contain ")", so the line
     is split at the last one. Raises OSError, ValueError or IndexError when
@@ -155,7 +157,19 @@ def read_stat(pid: int) -> tuple[str, int, int]:
         stat = fh.read()
     head, rest = stat.rsplit(")", 1)
     tail = rest.split()
-    return head.partition("(")[2], int(tail[11]) + int(tail[12]), int(tail[21])
+    return head.partition("(")[2], int(tail[11]) + int(tail[12])
+
+
+def read_statm(pid: int) -> tuple[int, int]:
+    """(resident, shared) pages from /proc/<pid>/statm.
+
+    shared is the resident file-backed and shmem part: pages that other
+    processes can have resident too.
+    """
+    with open("/proc/%d/statm" % pid, "r", encoding="utf-8",
+              errors="replace") as fh:
+        fields = fh.read().split()
+    return int(fields[1]), int(fields[2])
 
 
 def cpu_ticks() -> dict[int, int]:
@@ -174,8 +188,9 @@ def sample_procs(ticks_a: dict[int, int], sys_delta: int, page_kib: int,
     """Second pass: one record per pid present in both passes.
 
     cpu is the pid's share of all CPU time spent between the passes (not yet
-    clamped: make_row clamps the final figure); ident is the systemd app
-    identity, read only when grouping.
+    clamped: make_row clamps the final figure); rssKib and sharedKib come
+    from one statm read; ident is the systemd app identity, read only when
+    grouping.
     """
     procs = []
     for pid in list_pids():
@@ -183,7 +198,8 @@ def sample_procs(ticks_a: dict[int, int], sys_delta: int, page_kib: int,
         if old is None:
             continue
         try:
-            comm, ticks, rss_pages = read_stat(pid)
+            comm, ticks = read_stat(pid)
+            resident, shared = read_statm(pid)
         except (OSError, ValueError, IndexError):
             continue
         dproc = ticks - old
@@ -193,7 +209,8 @@ def sample_procs(ticks_a: dict[int, int], sys_delta: int, page_kib: int,
             "comm": sanitize_name(comm),
             "ident": app_identity(read_cgroup_first(pid)) if group else "",
             "cpu": cpu,
-            "rssKib": rss_pages * page_kib,
+            "rssKib": resident * page_kib,
+            "sharedKib": shared * page_kib,
         })
     return procs
 
@@ -246,11 +263,15 @@ def make_row(name: str, members: list[dict], mem_total: int) -> dict:
     """The output row for a group of processes; a lone process is a group of
     one and keeps its own comm, so the panel shows it as "comm (pid)".
 
-    pid is the member with the largest RSS; cpu and rssKib are sums, clamped
-    and rounded here because a sum can overshoot 100% on read skew.
+    pid is the member with the largest RSS. cpu is the sum, clamped and
+    rounded here because it can overshoot 100% on read skew. Summing RSS
+    would count a shared library or shmem segment once per member, so the
+    memory figure is every member's private RSS plus the largest member's
+    shared RSS: exact for one process, an estimate for a group.
     """
     lead = max(members, key=lambda p: p["rssKib"])
-    rss_kib = int(sum(p["rssKib"] for p in members))
+    rss_kib = int(sum(p["rssKib"] - p["sharedKib"] for p in members)
+                  + max(p["sharedKib"] for p in members))
     cpu = max(0.0, min(100.0, sum(p["cpu"] for p in members)))
     mem_pct = 100.0 * rss_kib / mem_total if mem_total > 0 else 0.0
     return {

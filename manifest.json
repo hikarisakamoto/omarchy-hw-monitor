@@ -148,7 +148,7 @@
         "type": "boolean",
         "label": "Group by application",
         "defaultValue": true,
-        "description": "Collapse processes by application (systemd scope, comm-name fallback) with summed RAM/CPU and process counts."
+        "description": "Collapse processes by application (systemd scope, comm-name fallback) with summed CPU, a RAM estimate that counts shared pages once, and process counts."
       },
       {
         "key": "ramFormat",

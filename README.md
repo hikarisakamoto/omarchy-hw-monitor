@@ -41,7 +41,7 @@ Clicking the widget opens an Omarchy keyboard-driven popup panel anchored to the
 - **60s CPU load sparkline** — live history trend buffer sampled while open (zero background cost when closed).
 - **Processor details** — full CPU model name (without cutoff), load, clock frequency, dynamic temperature color, and 1m/5m/15m load average meters.
 - **Memory breakdown** — used/total GiB visual meter, available, cache, and swap usage.
-- **Top processes** — the top processes sorted by RAM or CPU (switch in the header), with share and CPU% per process, blue ramp bars toward the theme accent. The Group toggle collapses them per application (systemd scope, name fallback) with counts and sums. Sampled only while the panel is open (zero cost while closed).
+- **Top processes** — the top processes sorted by RAM or CPU (switch in the header), with share and CPU% per process, blue ramp bars toward the theme accent. The Group toggle collapses them per application (systemd scope, name fallback) with counts, summed CPU and a RAM estimate that counts shared pages once. Sampled only while the panel is open (zero cost while closed).
 - **Graphics metrics** — full GPU card name, load, dynamic temperature color, VRAM meter, power draw (W), fan RPM, and clock speeds.
 - **Keyboard navigation** — `Escape` to close, `Tab`/`Shift+Tab` to switch panels, `r` to resample, `c`/`f` to toggle °C/°F, `s` to open or close the settings drawer.
 
@@ -145,7 +145,7 @@ omarchy bar set meviusisback.hw-monitor fahrenheit true --json
 | `showTopProcs` | bool | `true` | Show the top-processes section in the system panel (sampled only while open). |
 | `topProcCount` | int | `6` | How many rows to list (3–12, sorted by the active metric). |
 | `topProcSort` | enum | `ram` | Sort top processes by `ram` or `cpu` (switchable in the panel header). |
-| `topProcGroup` | bool | `true` | Collapse processes by application (systemd scope, name fallback) with counts and summed figures. |
+| `topProcGroup` | bool | `true` | Collapse processes by application (systemd scope, name fallback) with counts, summed CPU and a RAM estimate that counts shared pages once. |
 | `ramFormat` | string | `"used/total"` | `"used/total"` (`12/23G`), `"used"` (`12.3G`), `"percent"` (`52%`), `"free"` (`11.1G`), or `"available"` (`11.1G`). |
 | `tempFormat` | string | `"degree-unit"` | `"degree-unit"` (`45°C`), `"degree"` (`45°`), `"unit"` (`45C`), `"unit-lower"` (`45c`), or `"bare"` (`45`). |
 | `fahrenheit` | bool | `false` | Temperatures in °F instead of °C. |

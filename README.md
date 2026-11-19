@@ -223,6 +223,19 @@ That drops it from the bar and deletes the plugin. Per-widget settings live in
 the shell's own config (`~/.config/omarchy/shell.json`) and are left for the
 shell to prune — remove the widget's entry there if you want a clean slate.
 
+## Development
+
+Run the checks before you push:
+
+```sh
+scripts/check.sh
+```
+
+It validates the manifest the way `omarchy plugin add` does, checks that the
+manifest `defaults` match the schema, and syntax-checks `hw-probe`,
+`proc_top.py`, `Model.js` and the QML files. `shellcheck` and `pyflakes` also
+run when installed.
+
 ## License
 
 MIT — see [LICENSE](LICENSE). Original work by Edgar Silva; continued and

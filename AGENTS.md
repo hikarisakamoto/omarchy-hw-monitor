@@ -47,6 +47,16 @@ cp -rf source dest          # NOT: cp -r source dest
 - `apt-get` - use `-y` flag
 - `brew` - use `HOMEBREW_NO_AUTO_UPDATE=1` env var
 
+## Build & Test
+
+There is no build step: the shell loads the QML and helpers straight from the
+plugin folder.
+
+```bash
+scripts/check.sh   # manifest validation, defaults vs schema, syntax of every file
+./hw-probe | jq    # the sensors the probe finds on this machine
+```
+
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:46cd31e7 -->
 ## Beads Issue Tracker
 

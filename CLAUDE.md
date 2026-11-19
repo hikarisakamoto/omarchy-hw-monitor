@@ -60,12 +60,12 @@ This protocol applies when ending a Beads implementation workflow. It is subordi
 
 ## Build & Test
 
-_Add your build and test commands here_
+There is no build step: the shell loads the QML and helpers straight from the
+plugin folder.
 
 ```bash
-# Example:
-# npm install
-# npm test
+scripts/check.sh   # manifest validation, defaults vs schema, syntax of every file
+./hw-probe | jq    # the sensors the probe finds on this machine
 ```
 
 ## Architecture Overview

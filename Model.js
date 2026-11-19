@@ -102,7 +102,9 @@ function mixColor(from, to, t) {
 // untrusted anyway: keep only known keys with expected types, and accept a
 // sensor path only when it lives under /sys or /proc.
 function parseProbe(raw) {
-  var empty = { ok: false, cpu: { model: "CPU", cores: 0, threads: 0 }, gpus: [] }
+  // Until a probe lands the CPU is unknown: an empty model lets the tooltip
+  // and panel header fall back instead of showing "CPU · 0C/0T".
+  var empty = { ok: false, cpu: { model: "", cores: 0, threads: 0 }, gpus: [] }
   var text = String(raw || "").trim()
   if (text === "") return empty
   try {

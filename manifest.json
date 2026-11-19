@@ -99,14 +99,14 @@
         "type": "boolean",
         "label": "Show CPU temperature",
         "defaultValue": true,
-        "description": "Show CPU temperature with thermometer icon."
+        "description": "Show the standalone CPU temperature cell, with thermometer glyph, in icons mode. full and labels always show the CPU temperature next to its load; compact never does."
       },
       {
         "key": "showGpuTemp",
         "type": "boolean",
         "label": "Show GPU temperature",
         "defaultValue": false,
-        "description": "Show GPU temperature in the top bar."
+        "description": "Show a standalone GPU temperature cell in icons mode. full and labels always show the GPU temperature next to its load; compact never does."
       },
       {
         "key": "showRam",

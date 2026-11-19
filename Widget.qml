@@ -33,7 +33,7 @@ Panel {
   //   icons    Sleek component glyphs + live figures (Noctalia-style readout, default)
   //   compact  glyphs + gauges
   //   full     glyphs + gauges + temperatures
-  //   labels   Waybar-style text readout — GPU 0% · CPU 34% · TEMP 46°C · RAM 11/23G
+  //   labels   Waybar-style text readout — GPU 0% · 52°C  CPU 34% · 46°C  RAM 11.2/23G
   readonly property var modes: ["icons", "compact", "full", "labels"]
   readonly property string mode: enumSetting("mode", modes, "icons")
 

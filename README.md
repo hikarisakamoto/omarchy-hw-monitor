@@ -139,8 +139,8 @@ omarchy bar set meviusisback.hw-monitor fahrenheit true --json
 | `itemsOrder` | string | `"gpu,cpu,cpu-temp,ram"` | Comma-separated sequence of telemetry items in the top bar (`"gpu,cpu,cpu-temp,ram"` or `"gpu,cpu,cpu-temp,gpu-temp,ram"`). A JSON array also works. |
 | `showGpu` | bool | `true` | Show GPU load (hidden automatically if no card was found). |
 | `showCpu` | bool | `true` | Show CPU load. |
-| `showCpuTemp` | bool | `true` | Show CPU temperature with thermometer icon. |
-| `showGpuTemp` | bool | `false` | Show GPU temperature in the bar. |
+| `showCpuTemp` | bool | `true` | Show the standalone CPU temperature cell, with thermometer glyph, in `icons` mode. `full` and `labels` always show the CPU temperature next to its load; `compact` never does. |
+| `showGpuTemp` | bool | `false` | Show a standalone GPU temperature cell in `icons` mode. `full` and `labels` always show the GPU temperature next to its load; `compact` never does. |
 | `showRam` | bool | `true` | Show memory / RAM usage. |
 | `showTopProcs` | bool | `true` | Show the top-processes section in the system panel (sampled only while open). |
 | `topProcCount` | int | `6` | How many rows to list (3–12, sorted by the active metric). |

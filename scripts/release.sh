@@ -32,6 +32,9 @@ sed -i "s/^  \"version\": \"${current//./\\.}\",\$/  \"version\": \"$version\",/
   { restore; fail "could not change exactly the version line of manifest.json"; }
 scripts/check.sh >/dev/null || { restore; fail "scripts/check.sh failed; nothing was committed"; }
 
-git commit -q -m "chore: release v$version" -m "$notes" -- manifest.json CHANGELOG.md
-git tag -a "v$version" -m "v$version" -m "$notes"
+# --cleanup=whitespace keeps the notes' "### Added/Changed/Fixed" headings:
+# git tag (and git commit under commit.cleanup=strip) would drop every line
+# that starts with "#".
+git commit -q --cleanup=whitespace -m "chore: release v$version" -m "$notes" -- manifest.json CHANGELOG.md
+git tag -a --cleanup=whitespace "v$version" -m "v$version" -m "$notes"
 echo "Released v$version. Push with: git push && git push origin v$version"

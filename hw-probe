@@ -132,21 +132,37 @@ done
 # tooltip shows the driver name instead. Resolved once to an absolute path so
 # the session PATH cannot substitute a different binary at call time.
 lspci_bin=$(command -v lspci 2>/dev/null)
-have_lspci=0
-[[ -n $lspci_bin ]] && have_lspci=1
+
+# The text of the last non-empty [...] group in $1; fails when there is none.
+last_bracket() {
+  [[ $1 == *\[*\]* ]] || return 1
+  local s=${1##*[}
+  s=${s%%]*}
+  [[ -n $s ]] && printf '%s' "$s"
+}
 
 gpu_name_for() {
-  local slot=$1 driver=$2 line name
-  if ((have_lspci)) && [[ -n $slot ]]; then
-    line=$("$lspci_bin" -s "$slot" 2>/dev/null | head -1)
-    # "0d:00.0 VGA compatible controller: AMD/ATI Navi 48 [Radeon RX 9070 XT]"
-    name=${line#*: }
-    name=${name%% (rev *}
-    # Keep the marketing name inside the brackets when there is one.
-    if [[ $name == *\[*\]* ]]; then
-      local bracketed=${name##*[}
-      bracketed=${bracketed%%]*}
-      [[ -n $bracketed ]] && name=$bracketed
+  local slot=$1 driver=$2 key value vendor="" name="" short
+  if [[ -n $lspci_bin && -n $slot ]]; then
+    # -vmm prints one "Key:<TAB>value" per line, so the device name arrives
+    # apart from the vendor, which for AMD carries a bracket of its own:
+    #   Vendor: Advanced Micro Devices, Inc. [AMD/ATI]
+    #   Device: Navi 48 [Radeon RX 9070/9070 XT/9070 GRE]
+    while IFS=$'\t' read -r key value; do
+      case $key in
+        "") break ;;
+        Vendor:) vendor=$value ;;
+        Device:) name=$value ;;
+      esac
+    done < <("$lspci_bin" -vmm -s "$slot" 2>/dev/null)
+    if short=$(last_bracket "$name"); then
+      # Keep the marketing name inside the brackets when there is one.
+      name=$short
+    elif [[ $name =~ ^Device\ [0-9a-f]{4}$ ]]; then
+      # An id newer than the installed pci.ids has only a number for a name;
+      # say whose card it is, by the vendor's short name when it has one.
+      short=$(last_bracket "$vendor") && vendor=$short
+      name="$vendor $name"
     fi
     name=$(trim "$name")
     [[ -n $name ]] && { printf '%s' "$name"; return; }

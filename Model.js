@@ -169,8 +169,17 @@ function pickGpu(gpus, preference) {
   var want = String(preference === undefined || preference === null ? "auto" : preference).trim().toLowerCase()
   if (want === "" || want === "auto") return gpus[0]
 
+  // A bare number is a position in hw-probe's list, not a DRM card number:
+  // the probe lists cards with a load counter first, so "0" need not be card0.
   var index = parseInt(want, 10)
   if (isFinite(index) && index >= 0 && index < gpus.length) return gpus[index]
+
+  // An exact card name wins before the substring scan, so "card1" never
+  // lands on card10 just because that card is listed first.
+  for (var c = 0; c < gpus.length; c++) {
+    var card = gpus[c].card
+    if (typeof card === "string" && card.toLowerCase() === want) return gpus[c]
+  }
 
   // Otherwise treat it as a substring match on card, kind, or name — so
   // "card1", "amdgpu", and "9070" all select the same GPU.

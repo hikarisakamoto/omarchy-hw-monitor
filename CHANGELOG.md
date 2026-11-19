@@ -21,6 +21,8 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   identity and fell back to process names.
 - `proc_top.py --help`. Unknown or malformed arguments are now rejected with a
   usage message instead of silently ignored.
+- `gpuTempIconRotation`, so the GPU temperature glyph turns on its own;
+  `gpuIconRotation` now rotates only the GPU glyph.
 
 ### Changed
 
@@ -33,6 +35,17 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   `/proc` read per process in the first sample, and linear-time grouping.
 - `proc_top.py` exits 1 on a failure and 2 on a bad argument instead of 0; it
   still prints `{}`, so the panel behaves as before.
+- Bar temperatures stay dim up to `warnTempC` and warm toward the urgent colour
+  from there to `criticalTempC`, as the settings describe. With the defaults, a
+  50-75 °C reading now draws dim instead of slightly warmed.
+- Middle click resamples the widget on every screen, like the IPC `refresh`.
+- The hover tooltip names all three clicks.
+- `percentPad: "trail"` (and its old name `"space"`) is retired and reads as
+  `"none"`, which it already drew. README and manifest give the real
+  mode-dependent default (`"zero"` in `compact`/`full`/`labels`).
+- `ramFormat: "available"` is an alias of `"free"`; both show `MemAvailable`.
+- README and manifest say that `showCpuTemp`/`showGpuTemp` add the standalone
+  temperature cells of `icons` mode, and list the `show`/`hide` IPC calls.
 
 ### Fixed
 
@@ -56,6 +69,13 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   character instead of one per byte.
 - Apps started through `gtk-launch` (Spotify, for example) get their own
   top-processes rows instead of all sharing one "gtk-launch" row.
+- Bar cells update in place on each sample instead of being rebuilt, so their
+  colour and gauge-fill animations run, and only the bar's own orientation
+  holds cells.
+- The width reserved for a temperature figure follows `tempFormat`, so the
+  narrower formats no longer leave a gap after the figure.
+- With `ramFormat: "available"` the settings drawer now marks the Free chip.
+- `status` no longer prints "undefined" for a GPU the probe could not name.
 
 ## 1.2.1 — 2026-10-16
 

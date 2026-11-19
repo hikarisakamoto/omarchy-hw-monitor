@@ -192,6 +192,16 @@ KeyboardPanel {
       flick.contentY = Math.min(maxY, top + chip.height + margin - flick.height)
   }
 
+  // With the drawer closed, Up/Down (j/k) scroll the panel when it is taller
+  // than its card, a step the size the shell's agents panel uses. Content that
+  // fits stays at the top.
+  function scrollPanel(dy) {
+    var flick = scrollArea.contentItem
+    if (!flick || flick.contentY === undefined) return
+    var maxY = Math.max(0, flick.contentHeight - flick.height)
+    flick.contentY = Math.max(0, Math.min(maxY, flick.contentY + dy * Style.space(56)))
+  }
+
   focusTarget: keyCatcher
   contentWidth: fittedContentWidth(Style.space(500))
   contentHeight: fittedContentHeight(panelColumn.implicitHeight + Style.space(16), Style.space(1100))
@@ -200,7 +210,10 @@ KeyboardPanel {
     id: keyCatcher
     anchors.fill: parent
     onCloseRequested: root.close()
-    onMoveRequested: function(dx, dy) { if (root.settingsOpen) root.moveDrawerCursor(dx, dy) }
+    onMoveRequested: function(dx, dy) {
+      if (root.settingsOpen) root.moveDrawerCursor(dx, dy)
+      else if (dy !== 0) root.scrollPanel(dy)
+    }
     onActivateRequested: if (root.settingsOpen && root.drawerCursorActive) root.activateDrawerCursor()
     // root.owner is the Panel widget root (Widget.qml sets owner: root),
     // which is what Bar.switchPanelFrom expects.

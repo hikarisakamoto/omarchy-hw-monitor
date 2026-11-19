@@ -30,6 +30,9 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 - The panel's settings drawer works from the keyboard: with it open, the arrow
   keys or `h`/`j`/`k`/`l` move a cursor between its chips (entering a row on
   its current choice) and `Enter` or `Space` picks the chip under it.
+- With the settings drawer closed, Up/Down or `j`/`k` scroll the panel when it
+  is taller than the screen, so its lower sections are reachable without a
+  mouse.
 
 ### Changed
 

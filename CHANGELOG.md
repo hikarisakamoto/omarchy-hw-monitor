@@ -63,6 +63,18 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   with the same easing, and top-process bars glide to their new length on
   each refresh instead of being redrawn.
 - The panel no longer runs animations while it is closed.
+- The panel's 60-second CPU load history is recorded in the background (one
+  array push per sample, no extra reads), so the sparkline is already full
+  when the panel opens, and its time axis stays to scale at any
+  `refreshIntervalSec`. While the panel is open everything samples once a
+  second, as before.
+- `topProcGroup` reads `"0"`, `"no"` and `"off"` as false, like every other
+  boolean setting.
+- README and manifest say that a numeric `gpu` value is a position in the
+  probe's list, not the DRM card number.
+- A sensor path from the probe is accepted only inside the two sysfs trees the
+  probe scans (`/sys/class/hwmon`, `/sys/class/drm`). `/proc` paths, whose
+  magic links can reach any file, are refused.
 
 ### Fixed
 
@@ -107,6 +119,31 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   "None" in both rows when there is no swap (was "0 GiB" / "None").
 - After a failed top-processes refresh, the previous rows dim and the
   timestamp turns urgent instead of passing for live data.
+- CPU load no longer jumps to noise (0%, 8%, 100%) while the panel is open:
+  the panel and the bar now share one sampler, and a resample right after a
+  tick (`r`, middle click, IPC `refresh`) keeps the last figure instead of
+  reading a near-empty window.
+- A sensor read that fails shows a dash instead of a zero that looks real
+  (0% GPU load, 0 W, an "idle" fan, 0 bytes of VRAM).
+- After switching `gpu` at runtime, sensors the new card lacks show a dash
+  instead of the previous card's figures, such as an AMD card's fan and clock
+  under an NVIDIA name.
+- NVIDIA cards report their GPU clock, so the panel's Clock row and the bar's
+  clock cell are no longer always a dash. Fan RPM stays unavailable on NVIDIA:
+  `nvidia-smi` gives fan speed only as a percentage.
+- When `nvidia-smi` fails (a driver/library mismatch after an update, a GPU
+  lost after suspend) or is killed for hanging, the GPU readout shows dashes
+  instead of freezing at the last values.
+- With `showTopProcs: false` the open panel no longer runs the top-processes
+  helper every 3 seconds for a section it does not show.
+- Malformed, truncated or oversized top-processes output no longer empties the
+  list as if it were valid; the last good list stays, marked as failed.
+- `gpu: "card1"` no longer selects card10 when that card is listed first.
+- A re-probe that fails when the widget is shown again keeps the sensors it
+  already found.
+- A helper that ignores SIGTERM while flooding output is now killed instead of
+  running on.
+- Memory figures just under 10 GiB read "10" instead of "10.0".
 
 ## 1.2.1 — 2026-10-16
 

@@ -364,7 +364,7 @@
         "type": "string",
         "label": "GPU card preference",
         "defaultValue": "auto",
-        "description": "'auto' picks the active card; otherwise an index ('0', '1') or name substring."
+        "description": "'auto' picks the first detected card, preferring one with a load counter (NVIDIA cards sort last). Otherwise an index into that order ('0', '1') or a name substring ('card1', '9070'); a value that matches nothing behaves like 'auto'."
       },
       {
         "key": "monitors",

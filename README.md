@@ -166,7 +166,7 @@ omarchy bar set meviusisback.hw-monitor fahrenheit true --json
 | `padOpacity` | number | `0.3` | Opacity (0–1) of the leading zero drawn when `percentPad` is `"zero"`. |
 | `iconSize` | int | `0` | Overall scale in pixels. `0` follows the bar's icon font. |
 | `refreshIntervalSec` | int | `2` | Seconds between samples. `1` is as fast as `FileView` makes sense; `5` is plenty for a background bar. |
-| `gpu` | string | `"auto"` | `"auto"` picks the card reporting load; otherwise an index (`0`, `1`) or name substring. |
+| `gpu` | string | `"auto"` | `"auto"` picks the first card the probe lists: cards with a load counter sort first, an NVIDIA card last. Otherwise an index into that list (`0`, `1`) or a case-insensitive substring of the card, driver or name (`"card1"`, `"amdgpu"`, `"9070"`). An out-of-range index or a substring that matches nothing falls back to `"auto"` rather than hiding the GPU. |
 | `warnPercent` | int | `70` | Load threshold where numbers and glyphs warm toward the urgent colour. |
 | `criticalPercent` | int | `90` | Load threshold where the gauge glows and color reaches full urgent. |
 | `warnTempC` | int | `75` | Temperature threshold (°C) where figures warm toward urgent. |

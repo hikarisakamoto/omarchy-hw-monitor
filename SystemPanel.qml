@@ -41,34 +41,18 @@ KeyboardPanel {
   readonly property color dimColor: Qt.darker(baseColor, 1.45)
   readonly property string fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
 
-  function warm(from, amount) {
-    if (!(amount > 0)) return from
-    var t = Math.min(1, amount)
-    return Qt.rgba(from.r + (hotColor.r - from.r) * t,
-                   from.g + (hotColor.g - from.g) * t,
-                   from.b + (hotColor.b - from.b) * t,
-                   from.a)
-  }
-
-  // Gradiente della sezione Top processi: base verso l'accent del tema
-  // (blu chiaro), mai verso urgent — la severità resta leggibile senza urlare.
-  function accentMix(amount) {
-    if (!(amount > 0)) return baseColor
-    var t = Math.min(1, amount)
-    return Qt.rgba(baseColor.r + (Color.accent.r - baseColor.r) * t,
-                   baseColor.g + (Color.accent.g - baseColor.g) * t,
-                   baseColor.b + (Color.accent.b - baseColor.b) * t,
-                   baseColor.a)
-  }
+  // One severity and one warmed colour per load figure, so the dial, the
+  // readouts and the meter bar of a metric always agree.
+  readonly property real cpuSeverity: Model.severity(hw.cpuPercent, warnPercent, criticalPercent)
+  readonly property real memSeverity: Model.severity(hw.memPercent, warnPercent, criticalPercent)
+  readonly property real vramSeverity: Model.severity(hw.gpuVramPercent, warnPercent, criticalPercent)
+  readonly property color cpuColor: Model.mixColor(baseColor, hotColor, cpuSeverity)
+  readonly property color memColor: Model.mixColor(baseColor, hotColor, memSeverity)
+  readonly property color vramColor: Model.mixColor(baseColor, hotColor, vramSeverity)
 
   function tempColor(tempC) {
-    if (!isFinite(tempC) || tempC <= 0) return dimColor
-    if (tempC < 50) return dimColor
-    var t = Math.min(1, Math.max(0, (tempC - 50) / Math.max(1, criticalTempC - 50)))
-    return Qt.rgba(baseColor.r + (hotColor.r - baseColor.r) * t,
-                   baseColor.g + (hotColor.g - baseColor.g) * t,
-                   baseColor.b + (hotColor.b - baseColor.b) * t,
-                   baseColor.a)
+    if (!(tempC >= 50)) return dimColor
+    return Model.mixColor(baseColor, hotColor, (tempC - 50) / Math.max(1, criticalTempC - 50))
   }
 
   // Ring buffer for the last 60 seconds of CPU samples.
@@ -524,7 +508,7 @@ KeyboardPanel {
             baseColor: root.baseColor
             hotColor: root.hotColor
             accentColor: Color.accent
-            severity: Model.severity(hw.cpuPercent, root.warnPercent, root.criticalPercent)
+            severity: root.cpuSeverity
             fontFamily: root.fontFamily
           }
 
@@ -539,7 +523,7 @@ KeyboardPanel {
             baseColor: root.baseColor
             hotColor: root.hotColor
             accentColor: Color.accent
-            severity: Model.severity(hw.memPercent, root.warnPercent, root.criticalPercent)
+            severity: root.memSeverity
             fontFamily: root.fontFamily
           }
 
@@ -594,7 +578,7 @@ KeyboardPanel {
               Text {
                 textFormat: Text.PlainText
                 text: hw.cpuPercent >= 0 ? (Math.round(hw.cpuPercent) + "% current") : "–"
-                color: root.warm(root.baseColor, Model.severity(hw.cpuPercent, root.warnPercent, root.criticalPercent))
+                color: root.cpuColor
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.caption
                 font.bold: true
@@ -746,7 +730,7 @@ KeyboardPanel {
                 InfoPair {
                   label: "Cur Load"
                   value: hw.cpuPercent >= 0 ? Model.formatPercent(hw.cpuPercent) : "–"
-                  valueColor: root.warm(root.baseColor, Model.severity(hw.cpuPercent, root.warnPercent, root.criticalPercent))
+                  valueColor: root.cpuColor
                 }
               }
             }
@@ -872,7 +856,7 @@ KeyboardPanel {
                 Text {
                   textFormat: Text.PlainText
                   text: hw.memory ? (Model.formatGib(Model.gibFromKib(hw.memory.usedKib)) + " / " + Model.formatGib(Model.gibFromKib(hw.memory.totalKib)) + " GiB (" + Math.round(hw.memPercent) + "%)") : "–"
-                  color: root.warm(root.baseColor, Model.severity(hw.memPercent, root.warnPercent, root.criticalPercent))
+                  color: root.memColor
                   font.family: root.fontFamily
                   font.pixelSize: Style.font.caption
                   font.bold: true
@@ -890,7 +874,7 @@ KeyboardPanel {
                   anchors.top: parent.top
                   anchors.bottom: parent.bottom
                   radius: parent.radius
-                  color: root.warm(root.baseColor, Model.severity(hw.memPercent, root.warnPercent, root.criticalPercent))
+                  color: root.memColor
                   width: hw.memPercent >= 0 ? Math.max(parent.height, Math.min(parent.width, parent.width * (hw.memPercent / 100))) : 0
                   Behavior on width { NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
                 }
@@ -1047,7 +1031,9 @@ KeyboardPanel {
                   readonly property real rankSev: total > 1 ? (1 - index / (total - 1)) : 1
                   readonly property real combinedSev: Math.max(0.35 + 0.65 * rankSev,
                     Model.severity(metricVal, root.warnPercent, root.criticalPercent))
-                  readonly property color sevColor: root.accentMix(combinedSev)
+                  // Rows ramp from the base colour toward the theme accent, never
+                  // toward urgent: a ranking should read clearly without alarming.
+                  readonly property color sevColor: Model.mixColor(root.baseColor, Color.accent, combinedSev)
 
                   Row {
                     width: parent.width
@@ -1187,7 +1173,7 @@ KeyboardPanel {
                 Text {
                   textFormat: Text.PlainText
                   text: hw.gpuVramTotalBytes > 0 ? (Model.formatGib(Model.gibFromBytes(hw.gpuVramUsedBytes)) + " / " + Model.formatGib(Model.gibFromBytes(hw.gpuVramTotalBytes)) + " GiB (" + Math.round(hw.gpuVramPercent) + "%)") : "–"
-                  color: root.warm(root.baseColor, Model.severity(hw.gpuVramPercent, root.warnPercent, root.criticalPercent))
+                  color: root.vramColor
                   font.family: root.fontFamily
                   font.pixelSize: Style.font.caption
                   font.bold: true
@@ -1205,7 +1191,7 @@ KeyboardPanel {
                   anchors.top: parent.top
                   anchors.bottom: parent.bottom
                   radius: parent.radius
-                  color: root.warm(root.baseColor, Model.severity(hw.gpuVramPercent, root.warnPercent, root.criticalPercent))
+                  color: root.vramColor
                   width: hw.gpuVramPercent >= 0 ? Math.max(parent.height, Math.min(parent.width, parent.width * (hw.gpuVramPercent / 100))) : 0
                   Behavior on width { NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
                 }
@@ -1372,13 +1358,7 @@ KeyboardPanel {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         radius: parent.radius
-        color: {
-          var ratio = meterRoot.maxVal > 0 ? Math.min(1, meterRoot.value / meterRoot.maxVal) : 0
-          return Qt.rgba(meterRoot.baseColor.r + (meterRoot.hotColor.r - meterRoot.baseColor.r) * ratio,
-                         meterRoot.baseColor.g + (meterRoot.hotColor.g - meterRoot.baseColor.g) * ratio,
-                         meterRoot.baseColor.b + (meterRoot.hotColor.b - meterRoot.baseColor.b) * ratio,
-                         meterRoot.baseColor.a)
-        }
+        color: Model.mixColor(meterRoot.baseColor, meterRoot.hotColor, meterRoot.maxVal > 0 ? meterRoot.value / meterRoot.maxVal : 0)
         width: meterRoot.maxVal > 0 ? Math.max(parent.height, Math.min(parent.width, parent.width * Math.min(1, meterRoot.value / meterRoot.maxVal))) : 0
         Behavior on width { NumberAnimation { duration: 240 } }
       }

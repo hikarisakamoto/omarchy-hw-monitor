@@ -173,7 +173,17 @@ omarchy bar set meviusisback.hw-monitor fahrenheit true --json
 | `warnTempC` | int | `75` | Temperature threshold (°C) where figures warm toward urgent. |
 | `criticalTempC` | int | `90` | Temperature threshold (°C) where temperature turns hot urgent red. |
 | `clickCommand` | string | `""` | Command to run on left click. Empty opens the built-in system panel popup. |
-| `monitors` | string | `""` | Comma-separated connector names to draw on (e.g. `"DP-1,HDMI-A-1"`). A JSON array also works. Empty draws on all screens. |
+| `monitors` | string | `""` | Comma-separated connector names to draw on (e.g. `"DP-1,HDMI-A-1"`). A JSON array also works. Empty draws on all screens. For a different readout per screen, see the note below on placing the widget more than once. |
+
+**Placing the widget more than once.** Each placement draws and samples on its
+own, so two entries can show a different `mode` on different `monitors`. But
+the shell saves settings by widget id: anything saved from the widget (right
+click, the panel's settings drawer, top-process chips and `c`/`f` keys, and the
+`cycleMode` and `toggleFahrenheit` IPC calls) writes that placement's whole
+entry, `monitors` included, onto every placement in `shell.json`. Edit
+placements that should differ by hand in `shell.json` and don't change them
+from the widget afterwards. For the same settings on several screens, use one
+placement with `monitors`.
 
 ## IPC
 

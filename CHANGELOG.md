@@ -17,6 +17,8 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   against the schema, syntax of every helper and QML file), and
   `scripts/release.sh` with this changelog.
 - README: a Development section on trying a checkout in your own bar.
+- README: a note that settings saved from the widget go to every placement
+  when it is placed more than once, with the per-monitor workaround.
 - The top-processes header says "by name" when grouping found no systemd app
   identity and fell back to process names.
 - `proc_top.py --help`. Unknown or malformed arguments are now rejected with a

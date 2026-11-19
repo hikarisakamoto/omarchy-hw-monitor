@@ -375,7 +375,9 @@ Item {
     interval: 30000
     repeat: false
     onTriggered: {
-      if (root._destroyed || root.probe.ok) return
+      // Not for a hidden instance whose panel is closed: it costs nothing,
+      // and showing it or opening its panel probes again.
+      if (root._destroyed || root.probe.ok || !(root.active || root.procPanelOpen)) return
       refreshProbe()
     }
   }
@@ -446,6 +448,15 @@ Item {
       cpuHistory = []
     }
   }
-  onProcPanelOpenChanged: if (!procPanelOpen && !active) cpuHistory = []
+  // start() needs `active`, so a hidden instance never ran discovery and its
+  // panel would show no temperatures or GPU: probe when that panel opens. A
+  // shown instance probes from start() and retries on its own, never here.
+  onProcPanelOpenChanged: {
+    if (procPanelOpen) {
+      if (!active && !probe.ok) refreshProbe()
+    } else if (!active) {
+      cpuHistory = []
+    }
+  }
   Component.onCompleted: start()
 }

@@ -163,6 +163,10 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   hotkey with that screen focused) keeps updating: its readings and sparkline
   no longer freeze after the first sample, and its top-processes list fills
   instead of showing "Collecting process data…" forever.
+- That panel also shows temperatures and the GPU: opening it runs sensor
+  discovery, which a screen hidden by `monitors` had never done. A hidden
+  screen whose discovery failed no longer retries every 30 seconds while its
+  panel is closed.
 - One helper run that floods its error output past the size cap no longer
   gets every later quiet run of that helper killed, so the top-processes list
   (and, where `nvidia-smi` is slow, the GPU readout) recovers instead of

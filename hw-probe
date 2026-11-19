@@ -261,20 +261,21 @@ done
 # own sampling instead of re-resolving from the session PATH.
 nv_bin=$(command -v nvidia-smi 2>/dev/null)
 if [[ -n $nv_bin ]]; then
-  # With no NVIDIA card nvidia-smi fails but prints its error on stdout, which
-  # would otherwise be taken for a GPU name.
-  nv_name=$("$nv_bin" --query-gpu=name --format=csv,noheader 2>/dev/null | head -1) || nv_name=""
-  if [[ -n $nv_name ]]; then
+  # One "index, name" line per card; the index is what the widget passes to
+  # --id= when sampling. With no NVIDIA card nvidia-smi fails but prints its
+  # error on stdout, so its exit status gates the output, and a line counts
+  # only when it leads with a plain index (emitted below as a JSON number).
+  nv_out=$("$nv_bin" --query-gpu=index,name --format=csv,noheader 2>/dev/null) || nv_out=""
+  while IFS=, read -r nv_idx nv_name; do
+    nv_idx=$(trim "$nv_idx")
+    nv_name=$(trim "$nv_name")
+    [[ $nv_idx =~ ^(0|[1-9][0-9]*)$ && -n $nv_name ]] || continue
     nv="{$(field_str kind nvidia)"
-    nv+="$(field_str name "$(trim "$nv_name")")"
+    nv+="$(field_str name "$nv_name")"
     nv+="$(field_str nvidiaPath "$nv_bin")"
-    nv+="$(printf '%s: %s' "$(json_str index)" 0)}"
-    if ((${#gpu_entries[@]} == 0)); then
-      gpu_entries=("$nv")
-    else
-      gpu_entries+=("$nv")
-    fi
-  fi
+    nv+="\"index\": $nv_idx}"
+    gpu_entries+=("$nv")
+  done <<<"$nv_out"
 fi
 
 # -------------------------------------------------------------------- output

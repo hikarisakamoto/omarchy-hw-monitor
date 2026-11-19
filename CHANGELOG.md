@@ -170,6 +170,9 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 - Helper output over its size cap is dropped as a failed run even when it
   arrives in one burst between two checks, so an oversized `hw-probe` or
   `nvidia-smi` reply is never parsed.
+- When the system clock steps backwards (for example NTP correcting a
+  local-time hardware clock on a dual-boot machine), the CPU load sparkline
+  starts over instead of drawing a garbled line until the clock catches up.
 
 ## 1.2.1 — 2026-10-16
 

@@ -392,6 +392,10 @@ Item {
     sample()
     if (cpuPercent >= 0) {
       var now = Date.now()
+      // A wall clock stepped backwards (NTP correcting a local-time RTC,
+      // `date -s`) leaves points stamped in the future: they would never be
+      // trimmed and would draw past the chart's right edge. Start over.
+      if (cpuHistory.length > 0 && cpuHistory[cpuHistory.length - 1].t > now) cpuHistory = []
       cpuHistory.push({ t: now, v: cpuPercent })
       while (now - cpuHistory[0].t > historyMs) cpuHistory.shift()
       if (procPanelOpen) cpuHistoryRev++

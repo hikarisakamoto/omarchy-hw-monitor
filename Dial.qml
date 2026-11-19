@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Shapes
 import qs.Commons
+import "Model.js" as Model
 
 // A 270-degree circular arc dial based on the SpeedTestOverlay pattern.
 // Used in the system panel for CPU, GPU, and RAM readouts.
@@ -12,18 +13,12 @@ Item {
   property real ratio: 0
   property string valueText: ""
   property string subText: ""
-  property int severity: 0
+  // 0..1 from Model.severity: the arc and figure warm from accent toward hot.
+  property real severity: 0
   property color baseColor: Color.foreground
   property color accentColor: Color.accent
   property color hotColor: Color.urgent
-  property color valueColor: {
-    if (severity >= 2) return hotColor
-    if (severity === 1) return Qt.rgba(baseColor.r + (hotColor.r - baseColor.r) * 0.6,
-                                       baseColor.g + (hotColor.g - baseColor.g) * 0.6,
-                                       baseColor.b + (hotColor.b - baseColor.b) * 0.6,
-                                       baseColor.a)
-    return accentColor
-  }
+  property color valueColor: Model.mixColor(accentColor, hotColor, severity)
   property color subTextColor: Qt.darker(baseColor, 1.4)
   property color trackColor: Qt.rgba(baseColor.r, baseColor.g, baseColor.b, 0.14)
   property real diameter: Style.space(108)

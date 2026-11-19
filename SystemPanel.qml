@@ -1017,9 +1017,13 @@ KeyboardPanel {
                 id: procTopStamp
                 textFormat: Text.PlainText
                 text: {
-                  var metric = hw.topProcSort === "cpu" ? "per CPU" : "per RAM"
-                  if (hw.procTopTime === "") return metric
-                  return metric + " \u00b7 " + hw.procTopTime
+                  var h = hw
+                  var metric = h.topProcSort === "cpu" ? "per CPU" : "per RAM"
+                  // Grouping found no systemd app identity and fell back to
+                  // process names: say so, the Group chip alone can't.
+                  if (h.topProcGroup && h.procGroupedBy === "comm") metric += " \u00b7 by name"
+                  if (h.procTopTime === "") return metric
+                  return metric + " \u00b7 " + h.procTopTime
                 }
                 color: Qt.darker(root.baseColor, 1.4)
                 font.family: root.fontFamily

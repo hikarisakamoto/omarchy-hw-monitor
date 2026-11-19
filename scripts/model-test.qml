@@ -22,6 +22,8 @@ QtObject {
       // Formatting and coercion.
       eq(Model.formatGib(9.94), "9.9", "formatGib below the boundary")
       eq(Model.formatGib(9.96), "10", "formatGib boundary")
+      eq(Model.formatGhzShort(0), "0.0", "formatGhzShort 0 MHz (idle GPU) is a reading")
+      eq(Model.formatGhz(-1), "–", "formatGhz missing clock")
       eq(Model.toNumber("", -1), -1, "toNumber blank is missing")
       eq(Model.toNumber(" 42 ", -1), 42, "toNumber trims")
       eq(Model.boolSetting("off", true), false, "boolSetting off")

@@ -378,8 +378,10 @@ function formatTemp(celsius, fahrenheit) {
 }
 
 // Just the number, for a bar row where an icon already says what it measures.
+// 0 is a real reading: a clock-gated idle GPU reports 0 Hz. Only a missing
+// clock (-1) is a dash.
 function formatGhzShort(mhz) {
-  if (!isFinite(mhz) || mhz <= 0) return "–"
+  if (!isFinite(mhz) || mhz < 0) return "–"
   return (mhz / 1000).toFixed(1)
 }
 

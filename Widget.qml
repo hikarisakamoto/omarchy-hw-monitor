@@ -382,7 +382,7 @@ Panel {
       }
       var extras = []
       if (hw.gpuRpm >= 0) extras.push("Fan " + Model.formatRpm(hw.gpuRpm))
-      if (hw.gpuMhz > 0) extras.push(Model.formatGhz(hw.gpuMhz))
+      if (hw.gpuMhz >= 0) extras.push(Model.formatGhz(hw.gpuMhz))
       if (extras.length > 0) lines.push(extras.join("  ·  "))
     }
 

@@ -185,6 +185,10 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 - A helper that ignores SIGTERM while flooding output is now killed instead of
   running on.
 - Memory figures just under 10 GiB read "10" instead of "10.0".
+- With `showClocks`, the bar width and the `status` clock segment no longer
+  change when an idle GPU reports a 0 Hz clock (a clock-gated AMD card): 0 MHz
+  reads "0.0" instead of the missing-reading dash, here and in the panel's
+  Clock row.
 - A panel opened on a screen that `monitors` hides (through IPC, or the panel
   hotkey with that screen focused) keeps updating: its readings and sparkline
   no longer freeze after the first sample, and its top-processes list fills

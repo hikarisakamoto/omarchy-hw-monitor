@@ -76,15 +76,8 @@ Item {
   property bool procTopFailed: false
   property string procGroupedBy: "none"
   readonly property int topProcCount: intSetting("topProcCount", 6, 3, 12)
-  readonly property string topProcSort: {
-    var want = String(setting("topProcSort", "ram")).trim().toLowerCase()
-    return want === "cpu" ? "cpu" : "ram"
-  }
-  readonly property bool topProcGroup: {
-    var value = setting("topProcGroup", true)
-    if (typeof value === "boolean") return value
-    return String(value).trim().toLowerCase() !== "false"
-  }
+  readonly property string topProcSort: enumSetting("topProcSort", ["ram", "cpu"], "ram")
+  readonly property bool topProcGroup: boolSetting("topProcGroup", true)
   readonly property string procTopPath: pluginDir + "/proc_top.py"
   property double _lastProcTopTry: 0
   property double _lastProcTopOk: 0
@@ -108,10 +101,19 @@ Item {
     return value === undefined || value === null ? fallback : value
   }
 
+  // Thin wrappers over the shared coercions in Model.js, so a shell.json value
+  // means the same thing here as in Widget.qml. setting() is read inside each
+  // binding, so a settings change still re-evaluates the property.
   function intSetting(name, fallback, min, max) {
-    var n = parseInt(String(setting(name, fallback)), 10)
-    if (!isFinite(n)) n = fallback
-    return Math.max(min, Math.min(max, n))
+    return Model.intSetting(setting(name, fallback), fallback, min, max)
+  }
+
+  function boolSetting(name, fallback) {
+    return Model.boolSetting(setting(name, fallback), fallback)
+  }
+
+  function enumSetting(name, options, fallback) {
+    return Model.enumSetting(setting(name, fallback), options, fallback)
   }
 
   // hwmon reports temperatures in millidegrees, but a handful of drivers

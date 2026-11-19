@@ -54,8 +54,9 @@ GENERIC_BASES = ("app", "user", "system", "init", "session")
 # Never an identity either: launchers whose scope is named after themselves,
 # not the app they start (app-Hyprland-gtk\x2dlaunch-XXXX.scope carries no
 # app name), so every app opened through them would merge into one row.
-# Their processes fall back to comm.
-LAUNCHERS = ("gtk-launch",)
+# Omarchy opens every terminal and TUI through xdg-terminal-exec. Their
+# processes fall back to comm.
+LAUNCHERS = ("gtk-launch", "xdg-terminal-exec")
 # Chromium-based browsers and Electron apps (brave, Spotify, ChatGPT...) move
 # their main process into app-org.chromium.Chromium-<pid>.scope, and helpers
 # it starts afterwards follow it there. That app id is Chromium's default,

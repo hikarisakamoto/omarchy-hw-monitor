@@ -99,8 +99,9 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   silently left out of the top-processes list (the scan bound is now 16384).
 - Non-ASCII app names from systemd units show one placeholder dot per
   character instead of one per byte.
-- Apps started through `gtk-launch` (Spotify, for example) get their own
-  top-processes rows instead of all sharing one "gtk-launch" row.
+- Apps started through `gtk-launch` (Spotify, for example) or
+  `xdg-terminal-exec` (every Omarchy terminal and TUI) get their own
+  top-processes rows instead of sharing one row named after the launcher.
 - Bar cells update in place on each sample instead of being rebuilt, so their
   colour and gauge-fill animations run, and only the bar's own orientation
   holds cells. Like the panel's, those animations follow Omarchy's animations

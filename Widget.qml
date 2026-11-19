@@ -32,10 +32,7 @@ Panel {
   //   full     glyphs + gauges + temperatures
   //   labels   Waybar-style text readout — GPU 0% · CPU 34% · TEMP 46°C · RAM 11/23G
   readonly property var modes: ["icons", "compact", "full", "labels"]
-  readonly property string mode: {
-    var want = String(setting("mode", "icons")).trim().toLowerCase()
-    return modes.indexOf(want) === -1 ? "icons" : want
-  }
+  readonly property string mode: enumSetting("mode", modes, "icons")
 
   readonly property string nextMode: modes[(modes.indexOf(mode) + 1) % modes.length]
   readonly property bool labelled: mode === "labels" && !vertical
@@ -79,25 +76,22 @@ Panel {
   // ------------------------------------------------------------ formatting
 
   readonly property bool fahrenheit: boolSetting("fahrenheit", false)
-  readonly property string ramFormat: {
-    var want = String(setting("ramFormat", "used/total")).trim().toLowerCase()
-    return ["used/total", "used", "percent", "free", "available"].indexOf(want) === -1 ? "used/total" : want
-  }
+  readonly property string ramFormat: enumSetting("ramFormat",
+    ["used/total", "used", "percent", "free", "available"], "used/total")
 
-  readonly property string tempFormat: {
-    var want = String(setting("tempFormat", "degree-unit")).trim().toLowerCase()
-    return ["degree-unit", "degree", "unit", "unit-lower", "bare"].indexOf(want) === -1 ? "degree-unit" : want
-  }
+  readonly property string tempFormat: enumSetting("tempFormat",
+    ["degree-unit", "degree", "unit", "unit-lower", "bare"], "degree-unit")
 
   readonly property string percentPad: {
-    var want = String(setting("percentPad", mode === "icons" ? "none" : "zero")).trim().toLowerCase()
-    if (want === "space") want = "trail"
-    return ["lead", "zero", "trail", "none"].indexOf(want) === -1 ? (mode === "icons" ? "none" : "zero") : want
+    var want = enumSetting("percentPad", ["lead", "zero", "trail", "space", "none"],
+                           mode === "icons" ? "none" : "zero")
+    // "space" is the name this option first shipped under.
+    return want === "space" ? "trail" : want
   }
 
   readonly property real padOpacity: {
     var n = Number(setting("padOpacity", 0.3))
-    return isFinite(n) ? Math.max(0, Math.min(1, n)) : 0.3
+    return isFinite(n) ? Model.clamp(n, 0, 1) : 0.3
   }
 
   readonly property int iconSizeSetting: intSetting("iconSize", 0, 0, 48)
@@ -125,19 +119,18 @@ Panel {
   readonly property int tempIconRotation: intSetting("tempIconRotation", 0, -360, 360)
   readonly property int ramIconRotation: intSetting("ramIconRotation", 0, -360, 360)
 
+  // Readers for this entry's settings. The coercion lives in Model.js, so
+  // Service.qml reads the same spellings the same way.
   function boolSetting(name, fallback) {
-    var value = setting(name, fallback)
-    if (typeof value === "boolean") return value
-    var text = String(value).trim().toLowerCase()
-    if (["true", "1", "yes", "on"].indexOf(text) !== -1) return true
-    if (["false", "0", "no", "off"].indexOf(text) !== -1) return false
-    return fallback
+    return Model.boolSetting(setting(name, fallback), fallback)
   }
 
   function intSetting(name, fallback, min, max) {
-    var n = parseInt(String(setting(name, fallback)), 10)
-    if (!isFinite(n)) n = fallback
-    return Math.max(min, Math.min(max, n))
+    return Model.intSetting(setting(name, fallback), fallback, min, max)
+  }
+
+  function enumSetting(name, options, fallback) {
+    return Model.enumSetting(setting(name, fallback), options, fallback)
   }
 
   // ------------------------------------------------------------------ color

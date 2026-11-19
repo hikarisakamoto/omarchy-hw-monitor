@@ -117,7 +117,7 @@ Settings are read from this widget's entry in `~/.config/omarchy/shell.json`:
   "showCpu": true,
   "showGpu": true,
   "ramFormat": "used/total",
-  "tempFormat": "degree",
+  "tempFormat": "degree-unit",
   "fahrenheit": false,
   "warnPercent": 70,
   "criticalPercent": 90,

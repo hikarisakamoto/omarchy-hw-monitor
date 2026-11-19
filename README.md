@@ -43,7 +43,7 @@ Clicking the widget opens an Omarchy keyboard-driven popup panel anchored to the
 - **Memory breakdown** — used/total GiB visual meter, available, cache, and swap usage.
 - **Top processes** — the top processes sorted by RAM or CPU (switch in the header), with share and CPU% per process, blue ramp bars toward the theme accent. The Group toggle collapses them per application (systemd scope, name fallback) with counts, summed CPU and a RAM estimate that counts shared pages once. Sampled only while the panel is open (zero cost while closed).
 - **Graphics metrics** — full GPU card name, load, dynamic temperature color, VRAM meter, power draw (W), fan RPM, and clock speeds.
-- **Keyboard navigation** — `Escape` to close, `Tab`/`Shift+Tab` to switch panels, `r` to resample, `c`/`f` to toggle °C/°F, `s` to open or close the settings drawer.
+- **Keyboard navigation** — `Escape` to close, `Tab`/`Shift+Tab` to switch panels, `r` to resample, `c` for °C, `f` for °F, `s` to open or close the settings drawer.
 
 ### The four bar readouts
 

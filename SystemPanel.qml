@@ -36,14 +36,6 @@ KeyboardPanel {
     }
   }
 
-  function toggleFahrenheit() {
-    if (root.owner && typeof root.owner.toggleFahrenheit === "function") {
-      root.owner.toggleFahrenheit()
-    } else {
-      root.fahrenheit = !root.fahrenheit
-    }
-  }
-
   readonly property color baseColor: root.bar ? root.bar.foreground : Color.foreground
   readonly property color hotColor: root.bar ? root.bar.urgent : Color.urgent
   readonly property color dimColor: Qt.darker(baseColor, 1.45)
@@ -142,8 +134,10 @@ KeyboardPanel {
     onTextKey: function(t) {
       if (t === "r" || t === "R") {
         hw.sample()
-      } else if (t === "c" || t === "C" || t === "f" || t === "F") {
-        root.toggleFahrenheit()
+      } else if (t === "c" || t === "C") {
+        root.persistSetting("fahrenheit", false)
+      } else if (t === "f" || t === "F") {
+        root.persistSetting("fahrenheit", true)
       } else if (t === "s" || t === "S") {
         root.settingsOpen = !root.settingsOpen
       }

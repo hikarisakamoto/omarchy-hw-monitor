@@ -57,6 +57,8 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   memory card is titled "Memory & Swap", and the CPU "Cur Load" row is "Load".
 - The panel's GPU dial says VRAM when, on a card without a load counter, it
   shows VRAM use.
+- The bar's GPU cell is labelled VRAM in `labels` mode when it shows VRAM use
+  on a card without a load counter.
 - Panel animations follow Omarchy's animations switch, all panel bars fill
   with the same easing, and top-process bars glide to their new length on
   each refresh instead of being redrawn.
@@ -91,6 +93,8 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   narrower formats no longer leave a gap after the figure.
 - With `ramFormat: "available"` the settings drawer now marks the Free chip.
 - `status` no longer prints "undefined" for a GPU the probe could not name.
+- `status` no longer prints "0C/0T" for a CPU whose cores and threads the probe
+  did not count.
 - Chromium-based browsers and Electron apps (brave, Spotify, ChatGPT) no
   longer lose their main process and its helpers to a mixed "Chromium" row;
   those processes are counted in their own app's row.

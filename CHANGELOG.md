@@ -163,6 +163,10 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   hotkey with that screen focused) keeps updating: its readings and sparkline
   no longer freeze after the first sample, and its top-processes list fills
   instead of showing "Collecting process data…" forever.
+- One helper run that floods its error output past the size cap no longer
+  gets every later quiet run of that helper killed, so the top-processes list
+  (and, where `nvidia-smi` is slow, the GPU readout) recovers instead of
+  failing for the rest of the session.
 
 ## 1.2.1 — 2026-10-16
 

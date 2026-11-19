@@ -14,13 +14,14 @@ import Quickshell.Io
 //   polling interval). Untampered output is one line of at most a few KB, so
 //   crossing the cap always means a runaway or tampered helper.
 //
-// StdioCollector.text still holds the PREVIOUS run's output until this run
-// writes its first byte (verified on Quickshell 0.3.2, for a run that writes
-// nothing and for one killed first). So the byte guard measures stdout
-// against the length recorded at spawn (without that baseline a
-// slow-first-byte run would be killed for the last run's size), and
+// A StdioCollector's text still holds the PREVIOUS run's output until this
+// run writes its first byte to that stream (verified on Quickshell 0.3.2, for
+// a run that writes nothing and for one killed first). So each stream has a
+// per-run fresh flag, set by its dataChanged: the byte guard counts a stream
+// only once this run has written to it (otherwise one oversized run, on
+// stdout or stderr, would get every later quiet run killed for its size), and
 // `finished` hands a run that wrote nothing "" rather than replaying the last
-// run's output as if it were new. stderr counts toward the cap too.
+// run's output as if it were new.
 Item {
   id: guard
 
@@ -39,16 +40,17 @@ Item {
 
   // Teardown veto: once set, no timer or handler touches anything again.
   property bool _destroyed: false
-  property int _base: 0
-  // Whether this run has written to stdout; dataChanged fires only for it.
+  // Whether this run has written to stdout / stderr; dataChanged fires only
+  // for the current run's bytes.
   property bool _fresh: false
+  property bool _errFresh: false
 
   // Start a run unless one is still in flight. Returns whether it started.
   function spawn(command) {
     if (_destroyed || proc.running) return false
     proc.command = command
-    _base = String(out.text).length
     _fresh = false
+    _errFresh = false
     watchdog.restart()
     proc.running = true
     return true
@@ -85,6 +87,7 @@ Item {
     stderr: StdioCollector {
       id: err
       waitForEnd: false
+      onDataChanged: guard._errFresh = true
     }
     onExited: {
       if (guard._destroyed) return
@@ -123,9 +126,8 @@ Item {
     running: proc.running
     onTriggered: {
       if (guard._destroyed) return
-      var len = String(out.text).length
-      var errLen = String(err.text).length
-      if ((len !== guard._base && len > guard.byteCap) || errLen > guard.byteCap) guard.terminate()
+      if ((guard._fresh && String(out.text).length > guard.byteCap)
+          || (guard._errFresh && String(err.text).length > guard.byteCap)) guard.terminate()
     }
   }
 }

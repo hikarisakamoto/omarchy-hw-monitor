@@ -306,6 +306,11 @@ function formatGibPrecise(gib) {
   return gib.toFixed(1)
 }
 
+// formatGib for a figure the kernel reports in KiB.
+function formatKib(kib) {
+  return formatGib(gibFromKib(kib))
+}
+
 function formatPercent(value) {
   if (!isFinite(value) || value < 0) return "–"
   return Math.round(value) + "%"

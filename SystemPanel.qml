@@ -51,6 +51,14 @@ KeyboardPanel {
   readonly property color memColor: Model.mixColor(baseColor, hotColor, memSeverity)
   readonly property color vramColor: Model.mixColor(baseColor, hotColor, vramSeverity)
 
+  // GPU load, or VRAM occupancy on a card that reports no load counter.
+  readonly property real gpuMeter: hw.gpuPercent >= 0 ? hw.gpuPercent : hw.gpuVramPercent
+
+  // "used / total GiB (pct%)" for the RAM and VRAM meter headers.
+  function usageText(usedGib, totalGib, percent) {
+    return Model.formatGib(usedGib) + " / " + Model.formatGib(totalGib) + " GiB (" + Model.formatPercent(percent) + ")"
+  }
+
   // Dim up to warnTempC, then warming toward urgent at criticalTempC, the
   // same ramp the bar uses. A missing reading (-1) stays dim.
   function tempColor(tempC) {
@@ -361,7 +369,7 @@ KeyboardPanel {
 
           PanelDial {
             title: "CPU"
-            valueText: hw.cpuPercent >= 0 ? Math.round(hw.cpuPercent) + "%" : "–"
+            valueText: Model.formatPercent(hw.cpuPercent)
             subText: hw.cpuTempC > 0 ? Model.formatTemp(hw.cpuTempC, root.fahrenheit) : ""
             subTextColor: root.tempColor(hw.cpuTempC)
             ratio: hw.cpuPercent >= 0 ? hw.cpuPercent / 100 : 0
@@ -370,19 +378,19 @@ KeyboardPanel {
 
           PanelDial {
             title: "RAM"
-            valueText: hw.memPercent >= 0 ? Math.round(hw.memPercent) + "%" : "–"
-            subText: hw.memory ? (Model.formatGib(Model.gibFromKib(hw.memory.usedKib)) + "/" + Model.formatGib(Model.gibFromKib(hw.memory.totalKib)) + "G") : ""
+            valueText: Model.formatPercent(hw.memPercent)
+            subText: hw.memory ? Model.formatKib(hw.memory.usedKib) + "/" + Model.formatKib(hw.memory.totalKib) + "G" : ""
             ratio: hw.memPercent >= 0 ? hw.memPercent / 100 : 0
             severity: root.memSeverity
           }
 
           PanelDial {
             title: "GPU"
-            valueText: hw.hasGpu ? (hw.gpuPercent >= 0 ? Math.round(hw.gpuPercent) + "%" : (hw.gpuVramPercent >= 0 ? Math.round(hw.gpuVramPercent) + "%" : "–")) : "N/A"
+            valueText: hw.hasGpu ? Model.formatPercent(root.gpuMeter) : "N/A"
             subText: hw.hasGpu && hw.gpuTempC > 0 ? Model.formatTemp(hw.gpuTempC, root.fahrenheit) : (hw.hasGpu && hw.gpuWatts >= 0 ? Model.formatWatts(hw.gpuWatts) : "")
             subTextColor: root.tempColor(hw.gpuTempC)
-            ratio: hw.hasGpu ? (hw.gpuPercent >= 0 ? hw.gpuPercent / 100 : (hw.gpuVramPercent >= 0 ? hw.gpuVramPercent / 100 : 0)) : 0
-            severity: hw.hasGpu ? Model.severity(hw.gpuPercent >= 0 ? hw.gpuPercent : hw.gpuVramPercent, root.warnPercent, root.criticalPercent) : 0
+            ratio: hw.hasGpu && root.gpuMeter >= 0 ? root.gpuMeter / 100 : 0
+            severity: hw.hasGpu ? Model.severity(root.gpuMeter, root.warnPercent, root.criticalPercent) : 0
           }
         }
 
@@ -393,7 +401,7 @@ KeyboardPanel {
           InfoPair {
             label: "CPU Load History (60s)"
             labelColor: root.baseColor
-            value: hw.cpuPercent >= 0 ? (Math.round(hw.cpuPercent) + "% current") : "–"
+            value: hw.cpuPercent >= 0 ? Model.formatPercent(hw.cpuPercent) + " current" : "–"
             valueColor: root.cpuColor
             valueBold: true
             fontSize: Style.font.caption
@@ -489,19 +497,19 @@ KeyboardPanel {
               }
               InfoPair {
                 label: "Avg Clock"
-                value: hw.cpuMhz > 0 ? Model.formatGhz(hw.cpuMhz) : "–"
+                value: Model.formatGhz(hw.cpuMhz)
               }
             }
 
             HalfColumn {
               InfoPair {
                 label: "Temperature"
-                value: hw.cpuTempC > 0 ? Model.formatTemp(hw.cpuTempC, root.fahrenheit) : "–"
+                value: Model.formatTemp(hw.cpuTempC, root.fahrenheit)
                 valueColor: root.tempColor(hw.cpuTempC)
               }
               InfoPair {
                 label: "Cur Load"
-                value: hw.cpuPercent >= 0 ? Model.formatPercent(hw.cpuPercent) : "–"
+                value: Model.formatPercent(hw.cpuPercent)
                 valueColor: root.cpuColor
               }
             }
@@ -544,7 +552,7 @@ KeyboardPanel {
 
             InfoPair {
               label: "RAM Usage"
-              value: hw.memory ? (Model.formatGib(Model.gibFromKib(hw.memory.usedKib)) + " / " + Model.formatGib(Model.gibFromKib(hw.memory.totalKib)) + " GiB (" + Math.round(hw.memPercent) + "%)") : "–"
+              value: hw.memory ? root.usageText(Model.gibFromKib(hw.memory.usedKib), Model.gibFromKib(hw.memory.totalKib), hw.memPercent) : "–"
               valueColor: root.memColor
               valueBold: true
               fontSize: Style.font.caption
@@ -564,22 +572,22 @@ KeyboardPanel {
             HalfColumn {
               InfoPair {
                 label: "Available"
-                value: hw.memory ? (Model.formatGib(Model.gibFromKib(hw.memory.availableKib)) + " GiB") : "–"
+                value: hw.memory ? Model.formatKib(hw.memory.availableKib) + " GiB" : "–"
               }
               InfoPair {
                 label: "Page Cache"
-                value: hw.memory ? (Model.formatGib(Model.gibFromKib(hw.memory.cachedKib)) + " GiB") : "–"
+                value: hw.memory ? Model.formatKib(hw.memory.cachedKib) + " GiB" : "–"
               }
             }
 
             HalfColumn {
               InfoPair {
                 label: "Swap Used"
-                value: hw.memory && hw.memory.swapTotalKib > 0 ? (Model.formatGib(Model.gibFromKib(hw.memory.swapUsedKib)) + " GiB") : "0 GiB"
+                value: hw.memory && hw.memory.swapTotalKib > 0 ? Model.formatKib(hw.memory.swapUsedKib) + " GiB" : "0 GiB"
               }
               InfoPair {
                 label: "Swap Total"
-                value: hw.memory && hw.memory.swapTotalKib > 0 ? (Model.formatGib(Model.gibFromKib(hw.memory.swapTotalKib)) + " GiB") : "None"
+                value: hw.memory && hw.memory.swapTotalKib > 0 ? Model.formatKib(hw.memory.swapTotalKib) + " GiB" : "None"
               }
             }
           }
@@ -733,7 +741,7 @@ KeyboardPanel {
 
             InfoPair {
               label: "VRAM"
-              value: hw.gpuVramTotalBytes > 0 ? (Model.formatGib(Model.gibFromBytes(hw.gpuVramUsedBytes)) + " / " + Model.formatGib(Model.gibFromBytes(hw.gpuVramTotalBytes)) + " GiB (" + Math.round(hw.gpuVramPercent) + "%)") : "–"
+              value: hw.gpuVramTotalBytes > 0 ? root.usageText(Model.gibFromBytes(hw.gpuVramUsedBytes), Model.gibFromBytes(hw.gpuVramTotalBytes), hw.gpuVramPercent) : "–"
               valueColor: root.vramColor
               valueBold: true
               fontSize: Style.font.caption
@@ -750,18 +758,18 @@ KeyboardPanel {
             spacing: Style.space(16)
 
             HalfColumn {
-              InfoPair { label: "Load"; value: hw.gpuPercent >= 0 ? Model.formatPercent(hw.gpuPercent) : "–" }
+              InfoPair { label: "Load"; value: Model.formatPercent(hw.gpuPercent) }
               InfoPair {
                 label: "Temperature"
-                value: hw.gpuTempC > 0 ? Model.formatTemp(hw.gpuTempC, root.fahrenheit) : "–"
+                value: Model.formatTemp(hw.gpuTempC, root.fahrenheit)
                 valueColor: root.tempColor(hw.gpuTempC)
               }
-              InfoPair { label: "Power"; value: hw.gpuWatts >= 0 ? Model.formatWatts(hw.gpuWatts) : "–" }
+              InfoPair { label: "Power"; value: Model.formatWatts(hw.gpuWatts) }
             }
 
             HalfColumn {
-              InfoPair { label: "Clock"; value: hw.gpuMhz > 0 ? Model.formatGhz(hw.gpuMhz) : "–" }
-              InfoPair { label: "Fan"; value: hw.gpuRpm >= 0 ? Model.formatRpm(hw.gpuRpm) : "–" }
+              InfoPair { label: "Clock"; value: Model.formatGhz(hw.gpuMhz) }
+              InfoPair { label: "Fan"; value: Model.formatRpm(hw.gpuRpm) }
               InfoPair { label: "Driver"; value: hw.gpuInfo && hw.gpuInfo.kind ? String(hw.gpuInfo.kind) : "–" }
             }
           }

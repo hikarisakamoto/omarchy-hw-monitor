@@ -66,11 +66,12 @@ Panel {
   readonly property bool showRam: boolSetting("showRam", true)
   readonly property bool showTopProcs: boolSetting("showTopProcs", true)
 
+  readonly property var defaultItemOrder: ["gpu", "cpu", "cpu-temp", "ram"]
   readonly property var itemOrder: {
-    var raw = setting("itemsOrder", ["gpu", "cpu", "cpu-temp", "ram"])
+    var raw = setting("itemsOrder", defaultItemOrder)
     if (raw instanceof Array) return raw.map(function(s) { return String(s).trim().toLowerCase() })
     var text = String(raw || "").trim().toLowerCase()
-    return text === "" ? ["gpu", "cpu", "cpu-temp", "ram"] : text.split(/[,\s]+/)
+    return text === "" ? defaultItemOrder : text.split(/[,\s]+/)
   }
 
   // ------------------------------------------------------------ formatting
@@ -257,116 +258,79 @@ Panel {
 
   // ------------------------------------------------------------- cell output
 
-  readonly property var cells: {
-    var cellMap = {}
+  // Which sensors this machine reports. Plain bools, so the cell list below
+  // re-evaluates only when one flips, not on every sample.
+  readonly property bool hasCpuTemp: hw.cpuTempC > 0
+  readonly property bool hasGpuTemp: hw.hasGpu && hw.gpuTempC > 0
 
-    // GPU Load
-    if (showGpu && hw.hasGpu) {
-      var busy = hw.gpuPercent
-      var meterValue = busy >= 0 ? busy : hw.gpuVramPercent
-      cellMap["gpu"] = {
-        key: "gpu",
-        label: "GPU",
-        icon: gpuIcon,
-        iconRotation: gpuIconRotation,
-        value: percentText(meterValue),
-        pad: percentPadFor(meterValue),
-        temp: (mode === "full" || mode === "labels") && hw.gpuTempC > 0 ? tempText(hw.gpuTempC) : "",
-        tempC: hw.gpuTempC,
-        clock: Model.formatGhzShort(hw.gpuMhz),
-        ratio: meterValue >= 0 ? meterValue / 100 : 0,
-        severity: Model.severity(busy, warnPercent, criticalPercent)
-      }
+  // The enabled cells' keys: itemsOrder first, then any enabled key it leaves
+  // out. This is the Repeater model, and it changes only with settings or
+  // sensor presence, so a new sample updates the existing cell items in
+  // place (letting their colour and fill animations run) instead of
+  // rebuilding every cell each tick.
+  readonly property var cellKeys: {
+    var enabled = {
+      "gpu": showGpu && hw.hasGpu,
+      "cpu": showCpu,
+      "cpu-temp": showCpuTemp && hasCpuTemp && showTemps && mode === "icons",
+      "gpu-temp": showGpuTemp && hasGpuTemp && showTemps && mode === "icons",
+      "ram": showRam
     }
-
-    // CPU Load
-    if (showCpu) {
-      cellMap["cpu"] = {
-        key: "cpu",
-        label: "CPU",
-        icon: cpuIcon,
-        iconRotation: cpuIconRotation,
-        value: percentText(hw.cpuPercent),
-        pad: percentPadFor(hw.cpuPercent),
-        temp: (mode === "full" || mode === "labels") && hw.cpuTempC > 0 ? tempText(hw.cpuTempC) : "",
-        tempC: hw.cpuTempC,
-        clock: Model.formatGhzShort(hw.cpuMhz),
-        ratio: hw.cpuPercent >= 0 ? hw.cpuPercent / 100 : 0,
-        severity: Model.severity(hw.cpuPercent, warnPercent, criticalPercent)
-      }
-    }
-
-    // CPU Temperature (standalone cell used in 'icons' mode)
-    if (showCpuTemp && hw.cpuTempC > 0 && showTemps && mode === "icons") {
-      cellMap["cpu-temp"] = {
-        key: "cpu-temp",
-        label: "TEMP",
-        icon: tempIcon,
-        iconRotation: tempIconRotation,
-        value: tempText(hw.cpuTempC),
-        pad: "",
-        temp: "",
-        tempC: hw.cpuTempC,
-        clock: "",
-        ratio: Math.min(1, Math.max(0, (hw.cpuTempC - 30) / Math.max(1, criticalTempC - 30))),
-        severity: Model.severity(hw.cpuTempC, warnTempC, criticalTempC)
-      }
-    }
-
-    // GPU Temperature (standalone cell used in 'icons' mode)
-    if (showGpuTemp && hw.hasGpu && hw.gpuTempC > 0 && showTemps && mode === "icons") {
-      cellMap["gpu-temp"] = {
-        key: "gpu-temp",
-        label: "GPU°",
-        icon: gpuTempIcon,
-        iconRotation: gpuIconRotation,
-        value: tempText(hw.gpuTempC),
-        pad: "",
-        temp: "",
-        tempC: hw.gpuTempC,
-        clock: "",
-        ratio: Math.min(1, Math.max(0, (hw.gpuTempC - 30) / Math.max(1, criticalTempC - 30))),
-        severity: Model.severity(hw.gpuTempC, warnTempC, criticalTempC)
-      }
-    }
-
-    // RAM
-    if (showRam) {
-      cellMap["ram"] = {
-        key: "ram",
-        label: "RAM",
-        icon: ramIcon,
-        iconRotation: ramIconRotation,
-        value: ramText(),
-        pad: "",
-        temp: "",
-        tempC: -1,
-        clock: "",
-        ratio: hw.memPercent >= 0 ? hw.memPercent / 100 : 0,
-        severity: Model.severity(hw.memPercent, warnPercent, criticalPercent)
-      }
-    }
-
+    var order = itemOrder.concat(Object.keys(enabled))
     var out = []
-    var added = {}
-    for (var i = 0; i < itemOrder.length; i++) {
-      var k = itemOrder[i]
-      if (cellMap[k] && !added[k]) {
-        out.push(cellMap[k])
-        added[k] = true
-      }
+    for (var i = 0; i < order.length; i++) {
+      if (enabled[order[i]] === true && out.indexOf(order[i]) === -1) out.push(order[i])
     }
-    // Append any enabled items not in itemOrder
-    var fallbackOrder = ["gpu", "cpu", "cpu-temp", "gpu-temp", "ram"]
-    for (var j = 0; j < fallbackOrder.length; j++) {
-      var fk = fallbackOrder[j]
-      if (cellMap[fk] && !added[fk]) {
-        out.push(cellMap[fk])
-        added[fk] = true
-      }
-    }
-
     return out
+  }
+
+  // What one cell draws, from the current readings. Each cell binds to its
+  // own record, so it re-evaluates when one of its readings changes.
+  function cellInfo(key) {
+    if (key === "gpu") {
+      var busy = hw.gpuPercent
+      var gpu = loadCell("GPU", gpuIcon, gpuIconRotation,
+                         busy >= 0 ? busy : hw.gpuVramPercent, hw.gpuTempC, hw.gpuMhz)
+      // A card without a load counter fills its gauge from VRAM, but only
+      // real load warms it.
+      gpu.severity = Model.severity(busy, warnPercent, criticalPercent)
+      return gpu
+    }
+    if (key === "cpu") {
+      return loadCell("CPU", cpuIcon, cpuIconRotation, hw.cpuPercent, hw.cpuTempC, hw.cpuMhz)
+    }
+    if (key === "cpu-temp") return tempCell("TEMP", tempIcon, tempIconRotation, hw.cpuTempC)
+    if (key === "gpu-temp") return tempCell("GPU°", gpuTempIcon, gpuIconRotation, hw.gpuTempC)
+    return {
+      label: "RAM", icon: ramIcon, iconRotation: ramIconRotation,
+      value: ramText(), pad: "", temp: "", tempC: -1, clock: "",
+      ratio: hw.memPercent >= 0 ? hw.memPercent / 100 : 0,
+      severity: Model.severity(hw.memPercent, warnPercent, criticalPercent)
+    }
+  }
+
+  // A load percentage, with the component's temperature after a dot in the
+  // full and labels modes.
+  function loadCell(label, icon, rotation, percent, tempC, mhz) {
+    return {
+      label: label, icon: icon, iconRotation: rotation,
+      value: percentText(percent), pad: percentPadFor(percent),
+      temp: (mode === "full" || mode === "labels") && tempC > 0 ? tempText(tempC) : "",
+      tempC: tempC, clock: Model.formatGhzShort(mhz),
+      ratio: percent >= 0 ? percent / 100 : 0,
+      severity: Model.severity(percent, warnPercent, criticalPercent)
+    }
+  }
+
+  // A standalone temperature (icons mode). Its gauge spans 30 °C to criticalTempC.
+  // label is never drawn: only labels mode draws labels, and it has no such cell.
+  function tempCell(label, icon, rotation, tempC) {
+    return {
+      label: label, icon: icon, iconRotation: rotation,
+      value: tempText(tempC), pad: "", temp: "", tempC: tempC, clock: "",
+      ratio: Model.clamp((tempC - 30) / Math.max(1, criticalTempC - 30), 0, 1),
+      severity: Model.severity(tempC, warnTempC, criticalTempC)
+    }
   }
 
   // ---------------------------------------------------------------- tooltip
@@ -510,7 +474,7 @@ Panel {
     anchors.fill: parent
     bar: root.bar
     labelVisible: false
-    hasVisualContent: root.cells.length > 0
+    hasVisualContent: root.cellKeys.length > 0
     tooltipText: root.hint
     horizontalMargin: 6
     fixedWidth: root.vertical ? -1 : Math.ceil(horizontalCells.implicitWidth + button.scaledHorizontalMargin * 2)
@@ -522,6 +486,8 @@ Panel {
       else root.launchMonitor()
     }
 
+    // Only the orientation on screen gets cells; a Repeater instantiates its
+    // delegates whether or not its parent is visible.
     Row {
       id: horizontalCells
       visible: !root.vertical
@@ -529,7 +495,7 @@ Panel {
       spacing: Style.space(root.mode === "icons" ? 14 : 8)
 
       Repeater {
-        model: root.cells
+        model: root.vertical ? [] : root.cellKeys
         delegate: cell
       }
     }
@@ -541,7 +507,7 @@ Panel {
       spacing: Style.space(5)
 
       Repeater {
-        model: root.cells
+        model: root.vertical ? root.cellKeys : []
         delegate: cell
       }
     }
@@ -572,34 +538,50 @@ Panel {
     criticalTempC: root.criticalTempC
   }
 
-  // A component group: glyph + figure (+ temp)
+  // The shared look of every figure in a cell.
+  component CellText: Text {
+    height: root.contentHeight
+    textFormat: Text.PlainText
+    font.family: root.fontFamily
+    font.pixelSize: root.valueSize
+    verticalAlignment: Text.AlignVCenter
+    renderType: Text.NativeRendering
+    Behavior on color { ColorAnimation { duration: 240 } }
+  }
+
+  // A component group: glyph + figure (+ temp). modelData is the cell's key.
   Component {
     id: cell
 
     Row {
       id: group
-      required property var modelData
+      required property string modelData
+      readonly property var info: root.cellInfo(modelData)
+      readonly property bool isTempCell: modelData === "cpu-temp" || modelData === "gpu-temp"
+      // Temperatures follow their own ramp; load figures warm with severity.
+      readonly property color tone: isTempCell
+        ? root.tempColor(info.tempC)
+        : root.warm(root.base, info.severity)
+      readonly property color dimTone: root.warm(root.dim, info.severity)
       spacing: Style.space(4)
 
       // Every figure cell reserves its slot width: a single-digit value keeps
       // an invisible trailing gap instead of pulling its neighbours around.
-      readonly property int figureSlot: group.isTempCell ? root.tempSlot
-        : (modelData.key === "ram" ? root.ramSlot : root.percentSlot)
+      readonly property int figureSlot: isTempCell ? root.tempSlot
+        : (modelData === "ram" ? root.ramSlot : root.percentSlot)
       readonly property real slack: root.showValues
-        ? Math.max(0, group.figureSlot - valueText.implicitWidth - spacing)
+        ? Math.max(0, figureSlot - valueText.implicitWidth - spacing)
         : 0
-
-      readonly property bool isTempCell: modelData.key === "cpu-temp" || modelData.key === "gpu-temp"
 
       TextMetrics {
         id: glyphMetrics
         font.family: root.fontFamily
         font.pixelSize: root.iconSize
-        text: modelData.icon
+        text: group.info.icon
       }
 
       Item {
-        readonly property bool turned: Math.abs(modelData.iconRotation % 180) === 90
+        readonly property bool turned: Math.abs(group.info.iconRotation % 180) === 90
         readonly property real inkWidth: turned
           ? glyphMetrics.tightBoundingRect.height
           : glyphMetrics.tightBoundingRect.width
@@ -610,25 +592,21 @@ Panel {
 
         OpticalGlyph {
           anchors.fill: parent
-          visible: modelData.iconRotation === 0
-          text: modelData.icon
+          visible: group.info.iconRotation === 0
+          text: group.info.icon
           fontFamily: root.fontFamily
           fontSize: root.iconSize
-          color: group.isTempCell
-            ? root.tempColor(modelData.tempC)
-            : root.warm(root.base, modelData.severity)
+          color: group.tone
           Behavior on color { ColorAnimation { duration: 240 } }
         }
 
         Text {
           anchors.centerIn: parent
-          visible: modelData.iconRotation !== 0
-          rotation: modelData.iconRotation
+          visible: group.info.iconRotation !== 0
+          rotation: group.info.iconRotation
           textFormat: Text.PlainText
-          text: modelData.icon
-          color: group.isTempCell
-            ? root.tempColor(modelData.tempC)
-            : root.warm(root.base, modelData.severity)
+          text: group.info.icon
+          color: group.tone
           font.family: root.fontFamily
           font.pixelSize: root.iconSize
           renderType: Text.NativeRendering
@@ -641,23 +619,18 @@ Panel {
         height: root.contentHeight
         bodyWidth: root.gaugeWidth
         bodyHeight: root.gaugeHeight
-        ratio: modelData.ratio
-        fillColor: group.isTempCell ? root.tempColor(modelData.tempC) : root.warm(root.base, modelData.severity)
+        ratio: group.info.ratio
+        fillColor: group.tone
         trackColor: Qt.rgba(root.base.r, root.base.g, root.base.b, 0.14)
         borderColor: Qt.rgba(root.base.r, root.base.g, root.base.b, 0.4)
-        glow: modelData.severity >= 1
+        glow: group.info.severity >= 1
       }
 
-      Text {
+      CellText {
         visible: root.labelled
-        height: root.contentHeight
-        text: modelData.label
+        text: group.info.label
         color: root.dim
-        font.family: root.fontFamily
-        font.pixelSize: root.valueSize
         font.bold: true
-        verticalAlignment: Text.AlignVCenter
-        renderType: Text.NativeRendering
       }
 
       Row {
@@ -665,94 +638,53 @@ Panel {
         height: root.contentHeight
         spacing: 0
 
-        Text {
-          visible: modelData.pad !== ""
-          height: root.contentHeight
-          text: modelData.pad
-          color: root.warm(root.base, modelData.severity)
+        CellText {
+          visible: group.info.pad !== ""
+          text: group.info.pad
+          color: group.tone
           opacity: root.padOpacity
-          font.family: root.fontFamily
-          font.pixelSize: root.valueSize
-          verticalAlignment: Text.AlignVCenter
-          renderType: Text.NativeRendering
         }
 
-        Text {
+        CellText {
           id: valueText
-          height: root.contentHeight
-          text: modelData.value
-          color: group.isTempCell
-            ? root.tempColor(modelData.tempC)
-            : root.warm(root.base, modelData.severity)
-          font.family: root.fontFamily
-          font.pixelSize: root.valueSize
+          text: group.info.value
+          color: group.tone
           font.bold: !group.isTempCell
-          verticalAlignment: Text.AlignVCenter
-          renderType: Text.NativeRendering
-          Behavior on color { ColorAnimation { duration: 240 } }
         }
       }
 
       Row {
-        visible: root.showClocks && modelData.clock !== ""
+        visible: root.showClocks && group.info.clock !== ""
         height: root.contentHeight
         spacing: Style.space(2)
 
-        Text {
+        CellText {
           visible: root.clockIcon !== ""
-          height: root.contentHeight
           leftPadding: Style.space(2)
-          textFormat: Text.PlainText
           text: root.clockIcon
-          color: root.warm(root.dim, modelData.severity)
-          font.family: root.fontFamily
-          font.pixelSize: root.valueSize
-          verticalAlignment: Text.AlignVCenter
-          renderType: Text.NativeRendering
-          Behavior on color { ColorAnimation { duration: 240 } }
+          color: group.dimTone
         }
 
-        Text {
-          height: root.contentHeight
-          textFormat: Text.PlainText
-          text: modelData.clock
-          color: root.warm(root.dim, modelData.severity)
-          font.family: root.fontFamily
-          font.pixelSize: root.valueSize
-          verticalAlignment: Text.AlignVCenter
-          renderType: Text.NativeRendering
-          Behavior on color { ColorAnimation { duration: 240 } }
+        CellText {
+          text: group.info.clock
+          color: group.dimTone
         }
       }
 
       Row {
-        visible: root.showTemps && modelData.temp !== ""
+        visible: root.showTemps && group.info.temp !== ""
         height: root.contentHeight
         spacing: Style.space(3)
 
-        Text {
-          textFormat: Text.PlainText
-          height: root.contentHeight
+        CellText {
           text: "·"
           color: Qt.darker(root.base, 1.8)
-          font.family: root.fontFamily
-          font.pixelSize: root.valueSize
-          verticalAlignment: Text.AlignVCenter
-          renderType: Text.NativeRendering
         }
 
-        Text {
-          textFormat: Text.PlainText
-          height: root.contentHeight
+        CellText {
           width: Math.max(implicitWidth, root.tempSlot)
-          text: modelData.temp
-          color: root.tempColor(modelData.tempC)
-          font.family: root.fontFamily
-          font.pixelSize: root.valueSize
-          font.bold: false
-          verticalAlignment: Text.AlignVCenter
-          renderType: Text.NativeRendering
-          Behavior on color { ColorAnimation { duration: 240 } }
+          text: group.info.temp
+          color: root.tempColor(group.info.tempC)
         }
       }
 

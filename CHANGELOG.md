@@ -213,6 +213,9 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 - IPC `status` answers from a placement that samples. With `monitors` set, the
   call could reach a placement hidden on another screen and print only
   "CPU  –" (or that placement's stale figures).
+- A bar cell with a leading-zero percentage (`percentPad: "zero"`, the
+  `labels` default) no longer grows one digit wider below 10%, so the cells
+  after it stay put as a load crosses 10%.
 
 ## 1.2.1 — 2026-10-16
 

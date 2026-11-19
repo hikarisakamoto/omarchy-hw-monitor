@@ -586,7 +586,7 @@ Panel {
       readonly property int figureSlot: isTempCell ? root.tempSlot
         : (modelData === "ram" ? root.ramSlot : root.percentSlot)
       readonly property real slack: root.showValues
-        ? Math.max(0, figureSlot - valueText.implicitWidth - spacing)
+        ? Math.max(0, figureSlot - figure.implicitWidth - spacing)
         : 0
 
       TextMetrics {
@@ -656,6 +656,7 @@ Panel {
       }
 
       Row {
+        id: figure
         visible: root.showValues
         height: root.contentHeight
         spacing: 0

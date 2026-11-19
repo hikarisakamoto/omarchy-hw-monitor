@@ -80,7 +80,6 @@ Item {
   readonly property bool topProcGroup: boolSetting("topProcGroup", true)
   readonly property string procTopPath: pluginDir + "/proc_top.py"
   property double _lastProcTopTry: 0
-  property double _lastProcTopOk: 0
   // Stale-length baselines for the byte guards: StdioCollector.text still
   // holds the PREVIOUS run's output until this run's first byte arrives, so
   // each guard compares against the length recorded at spawn — without a
@@ -383,12 +382,8 @@ Item {
           root.topProcs = list
           root.procGroupedBy = res.groupedBy
           root.procTopFailed = false
-          root._lastProcTopOk = Date.now()
-          var d = new Date(root._lastProcTopOk)
-          var hh = d.getHours()
-          var mm = d.getMinutes()
-          var ss = d.getSeconds()
-          root.procTopTime = (hh < 10 ? "0" + hh : "" + hh) + ":" + (mm < 10 ? "0" + mm : "" + mm) + ":" + (ss < 10 ? "0" + ss : "" + ss)
+          // A fixed pattern, so the digits stay ASCII whatever the locale.
+          root.procTopTime = Qt.formatTime(new Date(), "HH:mm:ss")
         } else {
           root.procTopFailed = true
         }

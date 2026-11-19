@@ -167,6 +167,9 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   gets every later quiet run of that helper killed, so the top-processes list
   (and, where `nvidia-smi` is slow, the GPU readout) recovers instead of
   failing for the rest of the session.
+- Helper output over its size cap is dropped as a failed run even when it
+  arrives in one burst between two checks, so an oversized `hw-probe` or
+  `nvidia-smi` reply is never parsed.
 
 ## 1.2.1 — 2026-10-16
 

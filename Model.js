@@ -409,9 +409,12 @@ var PROC_NAME_MAX = 48
 var PROC_COUNT_MAX = 16384 // proc_top.py PID_CAP: no group can hold more
 var PROC_GROUPEDS = ["none", "scope", "comm"]
 
-// Output caps for the helpers Service.qml spawns, shared by the parser and the
-// byte guards so the two cannot drift apart. Counted in UTF-16 code units
-// (String.length), not bytes. Untampered output is one line of a few KB.
+// Output caps for the helpers Service.qml spawns, each a GuardedProcess
+// byteCap: a run whose stdout or stderr passes its cap is stopped and hands
+// its parser no text, so parseProbe, parseNvidia and parseProcTop never see
+// more than this. parseProcTop re-checks PROC_TOP_MAX_CHARS itself as well.
+// Counted in UTF-16 code units (String.length), not bytes. Untampered output
+// is one line of a few KB.
 var PROC_TOP_MAX_CHARS = 16384
 var HELPER_MAX_CHARS = 65536
 

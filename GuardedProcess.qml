@@ -22,6 +22,10 @@ import Quickshell.Io
 // stdout or stderr, would get every later quiet run killed for its size), and
 // `finished` hands a run that wrote nothing "" rather than replaying the last
 // run's output as if it were new.
+//
+// The cap is checked again on delivery: a burst written between two polls
+// (or before the first) still reaches the collector whole, so a run over its
+// cap hands `finished` "" too, and no parser ever sees more than byteCap.
 Item {
   id: guard
 
@@ -31,7 +35,8 @@ Item {
 
   readonly property bool running: proc.running
 
-  // Stdout closed; `text` is this run's output, or "" if it wrote none.
+  // Stdout closed; `text` is this run's output, or "" if it wrote none or
+  // its stdout or stderr passed byteCap.
   signal finished(string text)
   // The watchdog fired and the run is being terminated.
   signal timedOut()
@@ -54,6 +59,12 @@ Item {
     watchdog.restart()
     proc.running = true
     return true
+  }
+
+  // Whether this run's stdout or stderr has passed byteCap.
+  function _overCap() {
+    return (_fresh && String(out.text).length > byteCap)
+        || (_errFresh && String(err.text).length > byteCap)
   }
 
   // SIGTERM now; SIGKILL killMs after the FIRST request if it is still alive.
@@ -82,7 +93,10 @@ Item {
       id: out
       waitForEnd: false
       onDataChanged: guard._fresh = true
-      onStreamFinished: if (!guard._destroyed) guard.finished(guard._fresh ? text : "")
+      onStreamFinished: {
+        if (guard._destroyed) return
+        guard.finished(guard._fresh && !guard._overCap() ? text : "")
+      }
     }
     stderr: StdioCollector {
       id: err
@@ -126,8 +140,7 @@ Item {
     running: proc.running
     onTriggered: {
       if (guard._destroyed) return
-      if ((guard._fresh && String(out.text).length > guard.byteCap)
-          || (guard._errFresh && String(err.text).length > guard.byteCap)) guard.terminate()
+      if (guard._overCap()) guard.terminate()
     }
   }
 }

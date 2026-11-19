@@ -598,7 +598,6 @@ KeyboardPanel {
           title: "Top processes"
           spacing: Style.space(8)
           visible: root.showTopProcs
-          opacity: hw.procTopFailed && hw.topProcs.length === 0 ? 0.7 : 1
 
           headerItems: [
             ModeChip {
@@ -633,7 +632,9 @@ KeyboardPanel {
               if (h.procTopTime === "") return metric
               return metric + " \u00b7 " + h.procTopTime
             }
-            color: root.mutedColor
+            // Urgent while the last refresh failed: the time is then the last
+            // good sample, not a live one.
+            color: hw.procTopFailed ? root.hotColor : root.mutedColor
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption
             font.bold: true
@@ -643,6 +644,10 @@ KeyboardPanel {
             width: parent.width
             spacing: Style.space(6)
             visible: hw.topProcs.length > 0
+            // Service keeps the last good rows when a refresh fails; dim them so
+            // they do not pass for live data. The chips above stay bright,
+            // since picking one retries.
+            opacity: hw.procTopFailed ? 0.6 : 1
 
             // Modelled on the row count, not the array: Service assigns a new
             // array every refresh, which would rebuild every row (so the bars

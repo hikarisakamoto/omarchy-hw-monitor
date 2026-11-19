@@ -287,10 +287,12 @@ Panel {
   function cellInfo(key) {
     if (key === "gpu") {
       var busy = hw.gpuPercent
-      var gpu = loadCell("GPU", gpuIcon, gpuIconRotation,
-                         busy >= 0 ? busy : hw.gpuVramPercent, hw.gpuTempC, hw.gpuMhz)
-      // A card without a load counter fills its gauge from VRAM, but only
-      // real load warms it.
+      // A card without a load counter shows VRAM use instead, labelled as
+      // such (as the panel's dial is). It fills the gauge, but only real load
+      // warms it.
+      var vram = busy < 0 && hw.gpuVramPercent >= 0
+      var gpu = loadCell(vram ? "VRAM" : "GPU", gpuIcon, gpuIconRotation,
+                         vram ? hw.gpuVramPercent : busy, hw.gpuTempC, hw.gpuMhz)
       gpu.severity = Model.severity(busy, warnPercent, criticalPercent)
       return gpu
     }

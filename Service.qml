@@ -78,6 +78,9 @@ Item {
   readonly property int topProcCount: intSetting("topProcCount", 6, 3, 12)
   readonly property string topProcSort: enumSetting("topProcSort", ["ram", "cpu"], "ram")
   readonly property bool topProcGroup: boolSetting("topProcGroup", true)
+  // The panel only hides the section when this is off; gating here as well
+  // means proc_top.py is not forked for a list nobody sees.
+  readonly property bool showTopProcs: boolSetting("showTopProcs", true)
   readonly property string procTopPath: pluginDir + "/proc_top.py"
   property double _lastProcTopTry: 0
   // Teardown veto: once destruction begins (the hot-reload window) no handler
@@ -204,7 +207,7 @@ Item {
   // (a clamped integer, a validated ram/cpu sort, a bare --group flag): the
   // raw setting string never touches argv. No PATH lookup, no shell.
   function refreshProcTop() {
-    if (_destroyed || !active || !procPanelOpen || procTopProcess.running) return
+    if (_destroyed || !active || !procPanelOpen || !showTopProcs || procTopProcess.running) return
     var now = Date.now()
     if (_lastProcTopTry > 0 && now - _lastProcTopTry < 3000) return
     _lastProcTopTry = now
@@ -213,16 +216,16 @@ Item {
     procTopProcess.spawn(cmd)
   }
 
-  // A sort or grouping change refreshes at once (throttle reset). The guards
-  // in refreshProcTop still apply: nothing runs while the panel is closed.
-  onTopProcSortChanged: {
+  // A sort, grouping or visibility change refreshes at once (throttle reset).
+  // The guards in refreshProcTop still apply: nothing runs while the panel is
+  // closed or the section is off.
+  function refreshProcTopNow() {
     _lastProcTopTry = 0
     refreshProcTop()
   }
-  onTopProcGroupChanged: {
-    _lastProcTopTry = 0
-    refreshProcTop()
-  }
+  onTopProcSortChanged: refreshProcTopNow()
+  onTopProcGroupChanged: refreshProcTopNow()
+  onShowTopProcsChanged: refreshProcTopNow()
 
   // ----------------------------------------------------------------- files
   //

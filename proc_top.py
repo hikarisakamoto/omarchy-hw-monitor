@@ -202,37 +202,44 @@ def merge_key(name: str) -> str:
     return name.lower()
 
 
-def mergeable(shorter: str, longer: str) -> bool:
-    if shorter == longer:
-        return True
-    return any(longer.startswith(shorter + sep) for sep in ("-", "_", "."))
-
-
 def group_by_app(procs: list[dict]) -> list[tuple[str, list[dict]]]:
     """Bucket processes per application: [(display name, members)].
 
-    Bucket by key (systemd identity when present, else comm), then sep-prefix
-    merge: "orca" absorbs "orca-ide", with no false merges on alphanumeric
-    extensions ("pi" does not absorb "pipewire").
+    Each process is keyed by its systemd identity, else its comm (case-
+    insensitive). A key then joins the shortest key that is its prefix up to
+    a separator: "orca" absorbs "orca-ide", while "pi" never absorbs
+    "pipewire". A bucket without any identity never absorbs one that has an
+    identity: pid 1's bare "systemd" comm must not swallow systemd-journald,
+    systemd-logind and the other systemd-* services. A group is named after
+    its own key (identity spelling preferred), never after a member it
+    absorbed.
     """
     buckets = {}
     for p in procs:
-        label = p["ident"] if p["ident"] else p["comm"]
+        label = p["ident"] or p["comm"]
         buckets.setdefault(merge_key(label), []).append((label, p))
-    canon = {}
+    has_ident = {key: any(p["ident"] for _lab, p in members)
+                 for key, members in buckets.items()}
+    owner = {}
+    # Shortest first, so every prefix a key could join is already settled;
+    # owner[prefix] == prefix means that prefix leads its own group.
     for key in sorted(buckets, key=len):
-        target = None
-        for done in canon:
-            if mergeable(done, key):
-                target = done
+        owner[key] = key
+        for i, ch in enumerate(key):
+            prefix = key[:i]
+            if (ch in "-_." and owner.get(prefix) == prefix
+                    and (has_ident[prefix] or not has_ident[key])):
+                owner[key] = prefix
                 break
-        if target is None:
-            target = key
-        buckets[target].extend(buckets[key] if target != key else [])
-        ident_labels = [lab for lab, m in buckets[target] if m["ident"]]
-        canon[target] = ident_labels[0] if ident_labels else buckets[target][0][0]
-    return [(canon[key], [p for _lab, p in members])
-            for key, members in buckets.items() if key in canon]
+    groups = {key: [] for key in buckets if owner[key] == key}
+    for key, members in buckets.items():
+        groups[owner[key]].extend(p for _lab, p in members)
+    named = []
+    for key, members in groups.items():
+        own = buckets[key]
+        name = next((lab for lab, p in own if p["ident"]), own[0][0])
+        named.append((name, members))
+    return named
 
 
 def make_row(name: str, members: list[dict], mem_total: int) -> dict:

@@ -82,11 +82,14 @@ Panel {
   readonly property string tempFormat: enumSetting("tempFormat",
     ["degree-unit", "degree", "unit", "unit-lower", "bare"], "degree-unit")
 
+  // Entries without the key keep the dimmed leading zero the label-bearing
+  // modes have always drawn; icons mode draws the bare figure. "trail" (first
+  // shipped as "space") reserved a trailing slot, which every figure cell now
+  // does on its own, so both legacy spellings read as "none".
   readonly property string percentPad: {
-    var want = enumSetting("percentPad", ["lead", "zero", "trail", "space", "none"],
+    var want = enumSetting("percentPad", ["none", "zero", "lead", "trail", "space"],
                            mode === "icons" ? "none" : "zero")
-    // "space" is the name this option first shipped under.
-    return want === "space" ? "trail" : want
+    return want === "trail" || want === "space" ? "none" : want
   }
 
   readonly property real padOpacity: {
@@ -264,7 +267,6 @@ Panel {
         iconRotation: gpuIconRotation,
         value: percentText(meterValue),
         pad: percentPadFor(meterValue),
-        slotted: percentPad === "trail",
         temp: (mode === "full" || mode === "labels") && hw.gpuTempC > 0 ? tempText(hw.gpuTempC) : "",
         tempC: hw.gpuTempC,
         clock: Model.formatGhzShort(hw.gpuMhz),
@@ -282,7 +284,6 @@ Panel {
         iconRotation: cpuIconRotation,
         value: percentText(hw.cpuPercent),
         pad: percentPadFor(hw.cpuPercent),
-        slotted: percentPad === "trail",
         temp: (mode === "full" || mode === "labels") && hw.cpuTempC > 0 ? tempText(hw.cpuTempC) : "",
         tempC: hw.cpuTempC,
         clock: Model.formatGhzShort(hw.cpuMhz),
@@ -300,7 +301,6 @@ Panel {
         iconRotation: tempIconRotation,
         value: tempText(hw.cpuTempC),
         pad: "",
-        slotted: false,
         temp: "",
         tempC: hw.cpuTempC,
         clock: "",
@@ -318,7 +318,6 @@ Panel {
         iconRotation: gpuIconRotation,
         value: tempText(hw.gpuTempC),
         pad: "",
-        slotted: false,
         temp: "",
         tempC: hw.gpuTempC,
         clock: "",
@@ -336,7 +335,6 @@ Panel {
         iconRotation: ramIconRotation,
         value: ramText(),
         pad: "",
-        slotted: false,
         temp: "",
         tempC: -1,
         clock: "",
@@ -581,7 +579,6 @@ Panel {
 
       // Every figure cell reserves its slot width: a single-digit value keeps
       // an invisible trailing gap instead of pulling its neighbours around.
-      // The old trail-only reservation is subsumed by this.
       readonly property int figureSlot: group.isTempCell ? root.tempSlot
         : (modelData.key === "ram" ? root.ramSlot : root.percentSlot)
       readonly property real slack: root.showValues

@@ -23,7 +23,8 @@ else
 fi
 
 # Every `defaults` key must carry its schema entry's defaultValue, and the
-# reverse. A key whose default depends on the mode (showGauges) has neither.
+# reverse. A key whose default depends on the mode (showGauges, percentPad)
+# has neither.
 if ! drift=$(jq -r '.barWidget
     | (.defaults // {}) as $d
     | ([(.schema // [])[] | select(has("defaultValue")) | {(.key): .defaultValue}] | add // {}) as $s

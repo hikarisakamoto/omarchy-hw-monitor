@@ -55,7 +55,6 @@
       "tempIconRotation": 0,
       "ramIconRotation": 0,
       "clickCommand": "",
-      "percentPad": "none",
       "padOpacity": 0.3,
       "monitors": ""
     },
@@ -192,11 +191,9 @@
         "options": [
           "none",
           "zero",
-          "lead",
-          "trail"
+          "lead"
         ],
-        "defaultValue": "none",
-        "description": "How percentages hold width: 'none' (natural flow), 'zero' (03%), 'lead' ( 3%), or 'trail'. Figure cells always reserve slot width in every mode."
+        "description": "How percentages are padded: 'none' (3%), 'zero' (03%, the zero at padOpacity), or 'lead' ( 3%). Unset, it is 'none' in icons and 'zero' in compact, full and labels. Figure cells always reserve slot width in every mode; the retired 'trail' and 'space' read as 'none'."
       },
       {
         "key": "showGauges",

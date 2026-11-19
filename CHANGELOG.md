@@ -138,6 +138,9 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   helper every 3 seconds for a section it does not show.
 - Malformed, truncated or oversized top-processes output no longer empties the
   list as if it were valid; the last good list stays, marked as failed.
+- A top-processes refresh killed for hanging no longer passes the previous
+  run's output off as fresh, which cleared the failure mark and moved the
+  timestamp.
 - `gpu: "card1"` no longer selects card10 when that card is listed first.
 - A re-probe that fails when the widget is shown again keeps the sensors it
   already found.

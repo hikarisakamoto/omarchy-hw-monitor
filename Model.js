@@ -8,8 +8,11 @@
 var KIB_PER_GIB = 1048576
 var BYTES_PER_GIB = 1073741824
 
+// Number("") is 0, so an empty or blank value (a failed sysfs read leaves the
+// FileView text empty) is treated as missing rather than as a real zero.
 function toNumber(value, fallback) {
-  var n = Number(String(value).trim())
+  var text = String(value).trim()
+  var n = text === "" ? NaN : Number(text)
   return isFinite(n) ? n : (fallback === undefined ? 0 : fallback)
 }
 

@@ -47,21 +47,27 @@ Clicking the widget opens an Omarchy keyboard-driven popup panel anchored to the
 
 ### The four bar readouts
 
-**`icons`** *(default)* — GPU load, CPU load, CPU temperature with thermometer icon, and RAM (e.g. `󰾲 0%    34%    46°C    11/23G`), ~150px.
+The widths below are the widget's whole slot in the bar, margins included, at
+the default bar font and icon size with a GPU and a CPU temperature sensor
+present. They change with the bar's font and icon size, and are narrower
+without those sensors: with no GPU, about 210 px for `icons`, 65 for `compact`,
+115 for `full` and 210 for `labels`.
 
-**`compact`** — a glyph and a gauge per component, ~80px. The gauge fills from
+**`icons`** *(default)* — GPU load, CPU load, CPU temperature with thermometer icon, and RAM (e.g. `󰾲 0%    34%    46°C    11/23G`), ~265px.
+
+**`compact`** — a glyph and a gauge per component, ~95px. The gauge fills from
 the bottom and warms toward the theme's urgent colour as load climbs, so the
 machine's state is readable without reading a digit.
 
 ![compact](preview-compact.png)
 
-**`full`** — the same, plus CPU and GPU temperature, ~106px. Memory has no
+**`full`** — the same, plus CPU and GPU temperature, ~195px. Memory has no
 temperature sensor, so its gauge is the whole readout.
 
 ![full](preview-full.png)
 
 **`labels`** — the Waybar hardware group, tightened: no glyph, no gauge, each
-label welded to its figure, ~230px.
+label welded to its figure, ~330px.
 
 ![labels](preview-labels.png)
 

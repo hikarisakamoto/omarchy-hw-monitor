@@ -50,6 +50,52 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value))
 }
 
+// ---------------------------------------------------------------- settings
+//
+// One coercion per setting type, shared by Widget.qml and Service.qml, so a
+// value from shell.json means the same thing to every reader. Each returns the
+// fallback for a missing or unusable value instead of throwing.
+
+function isScalar(value) {
+  var t = typeof value
+  return t === "number" || t === "string" || t === "boolean"
+}
+
+function boolSetting(value, fallback) {
+  if (typeof value === "boolean") return value
+  if (!isScalar(value)) return fallback
+  var text = String(value).trim().toLowerCase()
+  if (["true", "1", "yes", "on"].indexOf(text) !== -1) return true
+  if (["false", "0", "no", "off"].indexOf(text) !== -1) return false
+  return fallback
+}
+
+function intSetting(value, fallback, min, max) {
+  var n = isScalar(value) ? parseInt(String(value), 10) : NaN
+  if (!isFinite(n)) n = fallback
+  return clamp(n, min, max)
+}
+
+// `options` lists the accepted lower-case spellings; anything else falls back.
+function enumSetting(value, options, fallback) {
+  if (!isScalar(value)) return fallback
+  var want = String(value).trim().toLowerCase()
+  return options.indexOf(want) === -1 ? fallback : want
+}
+
+// ------------------------------------------------------------------ colour
+
+// Blend `from` toward `to` by t, clamped to 0..1, keeping from's alpha. Every
+// warm-up, temperature, and accent ramp in the bar and panel goes through here.
+function mixColor(from, to, t) {
+  var k = isFinite(t) ? clamp(t, 0, 1) : 0
+  if (k <= 0) return from
+  return Qt.rgba(from.r + (to.r - from.r) * k,
+                 from.g + (to.g - from.g) * k,
+                 from.b + (to.b - from.b) * k,
+                 from.a)
+}
+
 // ------------------------------------------------------------------- probe
 
 // Probe output is one JSON line from a helper we spawn, but treat it as

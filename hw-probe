@@ -217,15 +217,22 @@ for card in /sys/class/drm/card[0-9]*; do
     [[ -d $candidate ]] && { hw=$candidate; break; }
   done
 
+  busy_path=$dev/gpu_busy_percent
+  [[ -r $busy_path ]] || busy_path=""
+  temp_path=""
+  [[ -n $hw ]] && temp_path=$(gpu_temp_for "$hw")
+  # A card that reports neither load nor temperature is not worth a slot.
+  [[ -n $busy_path || -n $temp_path ]] || continue
+
   entry="{"
   entry+="$(field_str kind "${driver:-drm}")"
   entry+="$(field_str name "$(gpu_name_for "$slot" "$driver")")"
   entry+="$(field_str card "${card##*/}")"
-  entry+="$(field_path busyPath "$dev/gpu_busy_percent")"
+  entry+="$(field_path busyPath "$busy_path")"
   entry+="$(field_path vramUsedPath "$dev/mem_info_vram_used")"
   entry+="$(field_path vramTotalPath "$dev/mem_info_vram_total")"
   if [[ -n $hw ]]; then
-    entry+="$(field_path tempPath "$(gpu_temp_for "$hw")")"
+    entry+="$(field_path tempPath "$temp_path")"
     # power1_average is the running average board draw; power1_input is the
     # instantaneous value some cards expose instead.
     if [[ -r $hw/power1_average ]]; then
@@ -239,12 +246,9 @@ for card in /sys/class/drm/card[0-9]*; do
   entry=${entry%, }
   entry+="}"
 
-  # A card that reports neither load nor temperature is not worth a slot.
-  [[ $entry == *busyPath* || $entry == *tempPath* ]] || continue
-
   # Cards that report load sort first: on a laptop with an iGPU and a dGPU the
   # one with a busy counter is the one the user means by "GPU".
-  if [[ $entry == *busyPath* ]]; then
+  if [[ -n $busy_path ]]; then
     gpu_entries=("$entry" "${gpu_entries[@]+"${gpu_entries[@]}"}")
   else
     gpu_entries+=("$entry")

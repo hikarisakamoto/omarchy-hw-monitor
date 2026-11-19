@@ -243,7 +243,10 @@ Item {
   function refreshProcTop() {
     if (_destroyed || !procPanelOpen || !showTopProcs || procTopProcess.running) return
     var now = Date.now()
-    if (_lastProcTopTry > 0 && now - _lastProcTopTry < 3000) return
+    // A stamp in the future means the wall clock stepped backwards (see the
+    // note in tick()): count it as expired, or nothing would refresh until
+    // the clock caught up.
+    if (_lastProcTopTry > 0 && now >= _lastProcTopTry && now - _lastProcTopTry < 3000) return
     _lastProcTopTry = now
     var cmd = ["/usr/bin/python3", procTopPath, "--top", String(topProcCount), "--sort", topProcSort]
     if (topProcGroup) cmd.push("--group")

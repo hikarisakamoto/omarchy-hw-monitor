@@ -207,6 +207,9 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 - When the system clock steps backwards (for example NTP correcting a
   local-time hardware clock on a dual-boot machine), the CPU load sparkline
   starts over instead of drawing a garbled line until the clock catches up.
+- After such a backward clock step, an open (or reopened) panel's
+  top-processes list keeps refreshing instead of freezing, with no failure
+  mark, until the clock caught up again.
 - The guard against near-empty CPU windows also holds when `hw-probe` never
   reported the CPU (it cannot run, crashes or is killed), so a resample right
   after a tick no longer reads noise there either.

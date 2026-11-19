@@ -90,6 +90,20 @@ Item {
   // Cumulative jiffies from the previous tick. CPU usage is the ratio between
   // two samples, so there is nothing to show until the second one lands.
   property var _prevJiffies: null
+  // The shortest window that counts as a CPU reading: ~250 ms of every
+  // thread's time (/proc/stat counts USER_HZ = 100 jiffies per CPU-second).
+  readonly property int _minCpuWindow: Math.max(1, cpuInfo.threads) * 25
+
+  // CPU load history for the panel's sparkline: {t, v} points pushed by the
+  // timed tick only (manual resamples would add irregular, short-window
+  // points) and trimmed to the last historyMs. It fills in the background at
+  // the cost of one array push per tick and no extra reads, so the chart
+  // already spans the last minute when the panel opens. The array is mutated
+  // in place; cpuHistoryRev is its change signal, bumped only while the panel
+  // is open, so a closed panel re-evaluates nothing.
+  readonly property int historyMs: 60000
+  property var cpuHistory: []
+  property int cpuHistoryRev: 0
 
   function setting(name, fallback) {
     var value = settings ? settings[name] : undefined
@@ -142,9 +156,12 @@ Item {
     statFile.reload()
     var jiffies = Model.parseCpuJiffies(statFile.text())
     if (jiffies) {
-      var usage = Model.cpuUsage(_prevJiffies, jiffies)
+      var usage = Model.cpuUsage(_prevJiffies, jiffies, _minCpuWindow)
       if (usage >= 0) cpuPercent = usage
-      _prevJiffies = jiffies
+      // A window too short to read keeps its baseline, so the next sample
+      // measures the whole span. A reading, a first sample, or a counter that
+      // went backwards moves it.
+      if (usage >= 0 || !_prevJiffies || jiffies.total < _prevJiffies.total) _prevJiffies = jiffies
     }
 
     memFile.reload()
@@ -351,11 +368,29 @@ Item {
 
   // -------------------------------------------------------------- lifetime
 
+  // The only periodic sampler. While the system panel is open everything
+  // ticks every second; otherwise at refreshIntervalSec. (The panel used to
+  // run its own 1 s sample() timer beside this one, and whenever the two
+  // landed a few ms apart the CPU figure came from a near-empty window.)
+  // Changing the interval restarts the timer, which at most delays one tick.
   Timer {
-    interval: root.intervalSec * 1000
+    interval: root.procPanelOpen ? 1000 : root.intervalSec * 1000
     running: root.active
     repeat: true
-    onTriggered: root.sample()
+    onTriggered: root.tick()
+  }
+
+  function tick() {
+    if (_destroyed) return
+    sample()
+    if (cpuPercent >= 0) {
+      var now = Date.now()
+      cpuHistory.push({ t: now, v: cpuPercent })
+      while (now - cpuHistory[0].t > historyMs) cpuHistory.shift()
+      if (procPanelOpen) cpuHistoryRev++
+    }
+    // Throttled to every 3 s and a no-op unless the panel is open.
+    refreshProcTop()
   }
 
   // CPU usage needs two samples. Take the second one shortly after startup so
@@ -373,6 +408,14 @@ Item {
     refreshProbe()
   }
 
-  onActiveChanged: if (active) start()
+  // A hidden instance keeps no history: when it is shown again the old
+  // points would be joined across the gap as if they were recent.
+  onActiveChanged: {
+    if (active) {
+      start()
+    } else {
+      cpuHistory = []
+    }
+  }
   Component.onCompleted: start()
 }

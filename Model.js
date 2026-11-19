@@ -212,12 +212,15 @@ function parseCpuJiffies(raw) {
 }
 
 // Usage is a ratio of jiffie deltas, not of wall-clock time, so an uneven
-// sampling interval cannot skew it.
-function cpuUsage(previous, current) {
+// sampling interval cannot skew it. A window under minDelta jiffies (an
+// off-cycle resample landing just after a tick) holds too few ticks to be a
+// reading — a handful of jiffies quantise to 0/50/100% — and returns -1 like
+// a missing sample.
+function cpuUsage(previous, current, minDelta) {
   if (!previous || !current) return -1
   var totalDelta = current.total - previous.total
   var idleDelta = current.idle - previous.idle
-  if (totalDelta <= 0) return -1
+  if (totalDelta <= 0 || totalDelta < (minDelta || 0)) return -1
   return clamp(100 * (1 - idleDelta / totalDelta), 0, 100)
 }
 

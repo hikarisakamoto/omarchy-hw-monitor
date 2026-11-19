@@ -38,7 +38,7 @@ Clicking the widget opens an Omarchy keyboard-driven popup panel anchored to the
 - **Header** — the CPU model, and a gear button (or `s`) that opens the settings drawer.
 - **Settings drawer** — chips for the bar readout mode, which items are shown (GPU, CPU, CPU and GPU temperature, RAM, clocks, gauges), RAM format, **°C**/**°F**, and temperature format. Each pick is saved to this widget's entry in `shell.json` at once. The drawer covers the common choices; every key is in [Settings](#settings).
 - **Telemetry dials** — 270° circular gauges with live figures for CPU load & temp, RAM usage, and GPU load & temp with dynamic temperature coloring.
-- **60s CPU load sparkline** — live history trend buffer sampled while open (zero background cost when closed).
+- **60s CPU load sparkline** — the last minute of CPU load, recorded on every sample tick in the background (one array push, no extra reads), so the chart is already full when the panel opens. While the panel is open everything samples once a second.
 - **Processor details** — full CPU model name (without cutoff), load, clock frequency, dynamic temperature color, and 1m/5m/15m load average meters.
 - **Memory breakdown** — used/total GiB visual meter, available, cache, and swap usage.
 - **Top processes** — the top processes sorted by RAM or CPU (switch in the header), with share and CPU% per process, blue ramp bars toward the theme accent. The Group toggle collapses them per application (systemd scope, name fallback) with counts, summed CPU and a RAM estimate that counts shared pages once. Sampled only while the panel is open (zero cost while closed).

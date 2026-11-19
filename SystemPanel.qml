@@ -70,19 +70,23 @@ KeyboardPanel {
     return t > 0 ? Model.mixColor(baseColor, hotColor, t) : mutedColor
   }
 
-  // Ring buffer for the last 60 seconds of CPU samples.
-  // Sampled while the panel is open; cleared when closed to avoid background overhead.
-  property var cpuHistory: []
-
+  // The sparkline draws the Service's CPU history ({t, v} points over the last
+  // hw.historyMs, recorded on every sample tick). x is time, ending at the
+  // newest point, so 1 s panel ticks and slower bar ticks both draw to scale.
+  // The buffer is mutated in place: hw.cpuHistoryRev is the change signal.
   readonly property var sparklinePoints: {
     var list = []
-    var n = cpuHistory ? cpuHistory.length : 0
-    if (n < 2) return list
+    hw.cpuHistoryRev  // read only to re-evaluate on each in-place push
+    var history = hw.cpuHistory
+    var n = history ? history.length : 0
+    if (!root.open || n < 2) return list
     var w = sparklineBox.width - Style.space(8)
     var h = sparklineBox.height - Style.space(8)
+    var end = history[n - 1].t
     for (var i = 0; i < n; i++) {
-      var px = Style.space(4) + (i / (n - 1)) * w
-      var v = Math.max(0, Math.min(100, Number(cpuHistory[i]) || 0))
+      var age = Math.min(1, (end - history[i].t) / hw.historyMs)
+      var px = Style.space(4) + (1 - age) * w
+      var v = Math.max(0, Math.min(100, Number(history[i].v) || 0))
       var py = Style.space(4) + h - (v / 100) * h
       list.push(Qt.point(px, py))
     }
@@ -91,25 +95,27 @@ KeyboardPanel {
 
   readonly property point sparklineFirst: sparklinePoints.length > 0 ? sparklinePoints[0] : Qt.point(0, sparklineBox.height)
 
+  // Close the fill under the line: down from the newest point, back along the
+  // baseline to below the oldest one (which need not sit at the left edge).
   readonly property var sparklineFillPoints: {
-    if (sparklinePoints.length < 2) return []
+    var n = sparklinePoints.length
+    if (n < 2) return []
     var list = sparklinePoints.slice()
-    var w = sparklineBox.width - Style.space(4)
     var h = sparklineBox.height - Style.space(4)
-    list.push(Qt.point(w, h))
-    list.push(Qt.point(Style.space(4), h))
+    list.push(Qt.point(sparklinePoints[n - 1].x, h))
+    list.push(Qt.point(sparklinePoints[0].x, h))
     return list
   }
 
+  // The Service owns sampling: procPanelOpen switches it to a 1 s tick (which
+  // also polls the top processes), and the resample here only makes the first
+  // frame fresh. Its CPU figure is skipped if the last tick was too recent.
   onOpenChanged: {
     if (open) {
-      hw.sample()
       hw.procPanelOpen = true
+      hw.sample()
       hw.refreshProcTop()
-      var initial = hw.cpuPercent >= 0 ? hw.cpuPercent : 0
-      root.cpuHistory = [initial, initial]
     } else {
-      root.cpuHistory = []
       root.settingsOpen = false
       hw.procPanelOpen = false
     }
@@ -141,24 +147,6 @@ KeyboardPanel {
         root.settingsOpen = !root.settingsOpen
       }
     }
-
-    Timer {
-      id: historyTimer
-      interval: 1000
-      repeat: true
-      running: root.open
-      onTriggered: {
-        hw.sample()
-        hw.refreshProcTop()
-        var cur = hw.cpuPercent >= 0 ? hw.cpuPercent : 0
-        var arr = root.cpuHistory.slice()
-        arr.push(cur)
-        if (arr.length > 60) arr.shift()
-        root.cpuHistory = arr
-      }
-    }
-
-    Component.onDestruction: historyTimer.stop()
 
     Controls.ScrollView {
       id: scrollArea

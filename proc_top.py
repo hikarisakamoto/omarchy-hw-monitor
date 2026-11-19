@@ -28,7 +28,6 @@ PID_CAP = 4096
 NAME_MAX = 48
 SNAP_GAP_S = 0.4
 SORTS = ("ram", "cpu")
-GROUPEDS = ("none", "scope", "comm")
 
 # App identity from the cgroup (measured on a Hyprland/systemd host, not assumed):
 # - deepest token ending in .scope/.service (e.g. app-Hyprland-zen\x2dbin-
@@ -44,7 +43,7 @@ CONTAINER_PREFIX = ("app-dbus-", "app-glib-")
 GENERIC_BASES = ("app", "user", "system", "init", "session")
 
 
-def unescape_unit(text):
+def unescape_unit(text: str) -> str:
     def sub(match):
         try:
             return chr(int(match.group(1), 16))
@@ -53,7 +52,7 @@ def unescape_unit(text):
     return re.sub(r"\\x([0-9a-fA-F]{2})", sub, text)
 
 
-def app_identity(cgline):
+def app_identity(cgline: str) -> str:
     if not cgline:
         return ""
     for seg in reversed(cgline.strip().split("/")):
@@ -93,7 +92,7 @@ NAME_OK = set(
     "._+:@/ -()")
 
 
-def sanitize_name(raw):
+def sanitize_name(raw: object) -> str:
     text = str(raw or "").strip().replace("\n", " ").replace("\t", " ")
     out = "".join(c if c in NAME_OK else "\u00b7" for c in text)
     out = " ".join(out.split())
@@ -102,7 +101,7 @@ def sanitize_name(raw):
     return out if out else "?"
 
 
-def read_mem_total_kib():
+def read_mem_total_kib() -> int:
     try:
         with open("/proc/meminfo", "r", encoding="utf-8",
                   errors="replace") as fh:
@@ -114,7 +113,7 @@ def read_mem_total_kib():
     return 0
 
 
-def read_sys_total():
+def read_sys_total() -> int:
     try:
         with open("/proc/stat", "r", encoding="utf-8",
                   errors="replace") as fh:
@@ -126,7 +125,7 @@ def read_sys_total():
     return 0
 
 
-def read_cgroup_first(pid):
+def read_cgroup_first(pid: int) -> str:
     try:
         with open("/proc/%d/cgroup" % pid, "r", encoding="utf-8",
                   errors="replace") as fh:
@@ -135,137 +134,141 @@ def read_cgroup_first(pid):
         return ""
 
 
-def snapshot_pids(want_cgroup):
-    """Return {pid: (utime+stime, rss_pages, comm, ppid, cgroupline)}."""
-    snap = {}
+def list_pids() -> list[int]:
+    """Numeric /proc entries, at most PID_CAP of them."""
     try:
         entries = os.listdir("/proc")
     except OSError:
-        return snap
-    count = 0
-    for entry in entries:
-        if not entry.isdigit():
-            continue
-        count += 1
-        if count > PID_CAP:
-            break
-        pid = int(entry)
+        return []
+    return [int(e) for e in entries if e.isdigit()][:PID_CAP]
+
+
+def read_stat(pid: int) -> tuple[str, int, int]:
+    """(comm, utime+stime ticks, rss_pages) from /proc/<pid>/stat.
+
+    comm is the parenthesised field and may itself contain ")", so the line
+    is split at the last one. Raises OSError, ValueError or IndexError when
+    the pid is gone or the line is malformed.
+    """
+    with open("/proc/%d/stat" % pid, "r", encoding="utf-8",
+              errors="replace") as fh:
+        stat = fh.read()
+    head, rest = stat.rsplit(")", 1)
+    tail = rest.split()
+    return head.partition("(")[2], int(tail[11]) + int(tail[12]), int(tail[21])
+
+
+def cpu_ticks() -> dict[int, int]:
+    """First pass: {pid: utime+stime}; only the CPU time is needed from it."""
+    ticks = {}
+    for pid in list_pids():
         try:
-            with open("/proc/%d/stat" % pid, "r", encoding="utf-8",
-                      errors="replace") as fh:
-                stat = fh.read()
-            tail = stat.rsplit(")", 1)[1].split()
-            ppid = int(tail[1])
-            utime = int(tail[11])
-            stime = int(tail[12])
-            rss_pages = int(tail[21])
-            with open("/proc/%d/comm" % pid, "r", encoding="utf-8",
-                      errors="replace") as fh:
-                comm = fh.read().strip()
+            ticks[pid] = read_stat(pid)[1]
         except (OSError, ValueError, IndexError):
             continue
-        cg = read_cgroup_first(pid) if want_cgroup else ""
-        snap[pid] = (utime + stime, rss_pages, comm, ppid, cg)
-    return snap
+    return ticks
 
 
-def merge_key(name):
+def sample_procs(ticks_a: dict[int, int], sys_delta: int, page_kib: int,
+                 group: bool) -> list[dict]:
+    """Second pass: one record per pid present in both passes.
+
+    cpu is the pid's share of all CPU time spent between the passes (not yet
+    clamped: make_row clamps the final figure); ident is the systemd app
+    identity, read only when grouping.
+    """
+    procs = []
+    for pid in list_pids():
+        old = ticks_a.get(pid)
+        if old is None:
+            continue
+        try:
+            comm, ticks, rss_pages = read_stat(pid)
+        except (OSError, ValueError, IndexError):
+            continue
+        dproc = ticks - old
+        cpu = 100.0 * dproc / sys_delta if sys_delta > 0 and dproc >= 0 else 0.0
+        procs.append({
+            "pid": pid,
+            "comm": sanitize_name(comm),
+            "ident": app_identity(read_cgroup_first(pid)) if group else "",
+            "cpu": cpu,
+            "rssKib": rss_pages * page_kib,
+        })
+    return procs
+
+
+def merge_key(name: str) -> str:
     return name.lower()
 
 
-def mergeable(shorter, longer):
+def mergeable(shorter: str, longer: str) -> bool:
     if shorter == longer:
         return True
     return any(longer.startswith(shorter + sep) for sep in ("-", "_", "."))
 
 
-def build_rows(snap_a, snap_b, sys_delta, mem_total, page_kib, group):
-    per_pid = []
-    for pid, (cpu_b, rss_b, comm, _ppid, cg) in snap_b.items():
-        old = snap_a.get(pid)
-        if old is None:
-            continue
-        dproc = cpu_b - old[0]
-        if sys_delta > 0 and dproc >= 0:
-            cpu = 100.0 * dproc / sys_delta
-        else:
-            cpu = 0.0
-        cpu = max(0.0, min(100.0, cpu))
-        rss_kib = rss_b * page_kib
-        per_pid.append({
-            "pid": pid,
-            "comm": sanitize_name(comm),
-            "ident": app_identity(cg) if group else "",
-            "cpu": cpu,
-            "rssKib": rss_kib,
-        })
+def group_by_app(procs: list[dict]) -> list[tuple[str, list[dict]]]:
+    """Bucket processes per application: [(display name, members)].
 
-    grouped_by = "none"
+    Bucket by key (systemd identity when present, else comm), then sep-prefix
+    merge: "orca" absorbs "orca-ide", with no false merges on alphanumeric
+    extensions ("pi" does not absorb "pipewire").
+    """
+    buckets = {}
+    for p in procs:
+        label = p["ident"] if p["ident"] else p["comm"]
+        buckets.setdefault(merge_key(label), []).append((label, p))
+    canon = {}
+    for key in sorted(buckets, key=len):
+        target = None
+        for done in canon:
+            if mergeable(done, key):
+                target = done
+                break
+        if target is None:
+            target = key
+        buckets[target].extend(buckets[key] if target != key else [])
+        ident_labels = [lab for lab, m in buckets[target] if m["ident"]]
+        canon[target] = ident_labels[0] if ident_labels else buckets[target][0][0]
+    return [(canon[key], [p for _lab, p in members])
+            for key, members in buckets.items() if key in canon]
+
+
+def make_row(name: str, members: list[dict], mem_total: int) -> dict:
+    """The output row for a group of processes; a lone process is a group of
+    one and keeps its own comm, so the panel shows it as "comm (pid)".
+
+    pid is the member with the largest RSS; cpu and rssKib are sums, clamped
+    and rounded here because a sum can overshoot 100% on read skew.
+    """
+    lead = max(members, key=lambda p: p["rssKib"])
+    rss_kib = int(sum(p["rssKib"] for p in members))
+    cpu = max(0.0, min(100.0, sum(p["cpu"] for p in members)))
+    mem_pct = 100.0 * rss_kib / mem_total if mem_total > 0 else 0.0
+    return {
+        "pid": lead["pid"],
+        "name": name if len(members) > 1 else lead["comm"],
+        "count": len(members),
+        "cpu": round(cpu, 1),
+        "rssKib": rss_kib,
+        "memPct": round(max(0.0, min(100.0, mem_pct)), 1),
+    }
+
+
+def build_rows(procs: list[dict], mem_total: int,
+               group: bool) -> tuple[list[dict], str]:
+    """Rows in sample order plus the groupedBy value for the JSON."""
     if not group:
-        rows = [{
-            "pid": p["pid"],
-            "name": p["comm"],
-            "count": 1,
-            "cpu": round(p["cpu"], 1),
-            "rssKib": int(p["rssKib"]),
-            "memPct": 0.0,
-        } for p in per_pid]
-    else:
-        identified = [p for p in per_pid if p["ident"]]
-        grouped_by = "scope" if identified else "comm"
-        # Bucket by key (systemd identity when present, else comm), then
-        # sep-prefix merge: "orca" absorbs "orca-ide", with no false merges
-        # on alphanumeric extensions ("pi" does not absorb "pipewire").
-        buckets = {}
-        for p in per_pid:
-            label = p["ident"] if p["ident"] else p["comm"]
-            buckets.setdefault(merge_key(label), []).append((label, p))
-        canon = {}
-        for key in sorted(buckets, key=len):
-            target = None
-            for done in canon:
-                if mergeable(done, key):
-                    target = done
-                    break
-            if target is None:
-                target = key
-            buckets[target].extend(buckets[key] if target != key else [])
-            ident_labels = [lab for lab, m in buckets[target] if m["ident"]]
-            canon[target] = ident_labels[0] if ident_labels else buckets[target][0][0]
-        rows = []
-        for key, members in buckets.items():
-            if key not in canon:
-                continue
-            display = canon[key]
-            procs = [m for _lab, m in members]
-            if len(procs) == 1:
-                m = procs[0]
-                rows.append({
-                    "pid": m["pid"],
-                    "name": m["comm"],
-                    "count": 1,
-                    "cpu": round(m["cpu"], 1),
-                    "rssKib": int(m["rssKib"]),
-                    "memPct": 0.0,
-                })
-            else:
-                rows.append({
-                    "pid": max(procs, key=lambda m: m["rssKib"])["pid"],
-                    "name": display,
-                    "count": len(procs),
-                    "cpu": round(sum(m["cpu"] for m in procs), 1),
-                    "rssKib": int(sum(m["rssKib"] for m in procs)),
-                    "memPct": 0.0,
-                })
-
-    for r in rows:
-        r["cpu"] = max(0.0, min(100.0, r["cpu"]))
-        mem_pct = (100.0 * r["rssKib"] / mem_total) if mem_total > 0 else 0.0
-        r["memPct"] = round(max(0.0, min(100.0, mem_pct)), 1)
-    return rows, grouped_by
+        return [make_row(p["comm"], [p], mem_total) for p in procs], "none"
+    # "scope" as soon as any process has a systemd identity; the others still
+    # fall back to their comm individually.
+    grouped_by = "scope" if any(p["ident"] for p in procs) else "comm"
+    return ([make_row(name, members, mem_total)
+             for name, members in group_by_app(procs)], grouped_by)
 
 
-def main(argv):
+def main(argv: list[str]) -> None:
     top_n = TOP_DEFAULT
     sort = "ram"
     group = False
@@ -295,14 +298,12 @@ def main(argv):
     mem_total = read_mem_total_kib()
 
     sys_a = read_sys_total()
-    snap_a = snapshot_pids(group)
+    ticks_a = cpu_ticks()
     time.sleep(SNAP_GAP_S)
     sys_b = read_sys_total()
-    snap_b = snapshot_pids(group)
-    sys_delta = sys_b - sys_a
+    procs = sample_procs(ticks_a, sys_b - sys_a, page_kib, group)
 
-    rows, grouped_by = build_rows(snap_a, snap_b, sys_delta, mem_total,
-                                  page_kib, group)
+    rows, grouped_by = build_rows(procs, mem_total, group)
     key = (lambda r: r["rssKib"]) if sort == "ram" else (lambda r: r["cpu"])
     rows.sort(key=key, reverse=True)
     sys.stdout.write(json.dumps({"groupedBy": grouped_by,

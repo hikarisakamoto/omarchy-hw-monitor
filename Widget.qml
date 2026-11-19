@@ -13,7 +13,10 @@ import "Model.js" as Model
 Panel {
   id: root
   moduleName: "meviusisback.hw-monitor"
-  ipcTarget: "meviusisback.hw-monitor"
+  // The host replaces moduleName with the entry id at load, so IPC answers on
+  // whatever id the manifest declares. The base handler is off because the
+  // IpcHandler below adds methods of its own.
+  ipcTarget: moduleName
   manageIpc: false
 
   readonly property bool vertical: bar ? bar.vertical : false
@@ -426,10 +429,11 @@ Panel {
   }
 
   IpcHandler {
-    target: "meviusisback.hw-monitor"
+    target: root.ipcTarget
 
     function open(): void { root.open() }
     function close(): void { root.close() }
+    // show/hide are the stock Omarchy panel verbs (Ui/Panel's own handler).
     function show(): void { root.open() }
     function hide(): void { root.close() }
     function toggle(): void { root.toggle() }

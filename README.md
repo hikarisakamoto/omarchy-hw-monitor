@@ -186,6 +186,10 @@ omarchy-shell meviusisback.hw-monitor open
 # Close the system panel
 omarchy-shell meviusisback.hw-monitor close
 
+# show / hide are aliases of open / close, the stock Omarchy panel verbs
+omarchy-shell meviusisback.hw-monitor show
+omarchy-shell meviusisback.hw-monitor hide
+
 # Toggle the system panel popup
 omarchy-shell meviusisback.hw-monitor toggle
 

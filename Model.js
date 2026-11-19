@@ -354,11 +354,11 @@ function formatRpm(rpm) {
 
 // ------------------------------------------------------------ top processes
 
-// Difesa-in-profondità: proc_top.py sanifica già tutto, qui si valida di
-// nuovo perché lo stdout di un subprocess è input non fidato. Ritorna sempre
-// {rows, groupedBy} (righe vuote su qualsiasi forma inattesa); tronca a maxN
-// righe, nomi a 48 char, numeri clampati ai range. Ordine del collector
-// (per metrica scelta) preservato.
+// Defence in depth: proc_top.py already sanitises everything, but a
+// subprocess's stdout is untrusted input, so it is validated again here.
+// Always returns {rows, groupedBy} (no rows on any unexpected shape); keeps at
+// most maxN rows, cuts names to 48 chars and clamps numbers to their ranges.
+// The collector's order (by the chosen metric) is preserved.
 var PROC_TOP_MAX = 12
 var PROC_NAME_MAX = 48
 var PROC_GROUPEDS = ["none", "scope", "comm"]

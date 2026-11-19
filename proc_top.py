@@ -1,18 +1,18 @@
 #!/usr/bin/python3
-"""Top-N processi per memoria RSS o CPU, opzionalmente raggruppati per app.
+"""Top-N processes by RSS memory or CPU, optionally grouped per application.
 
-Uso: proc_top.py [--top N] [--sort ram|cpu] [--group]
+Usage: proc_top.py [--top N] [--sort ram|cpu] [--group]
 Output: {"groupedBy": "none"|"scope"|"comm", "procs": [{"pid": 1234,
   "name": "firefox", "count": 12, "cpu": 12.3, "rssKib": 1234567,
   "memPct": 5.3}]}
-Pipeline: collect -> group -> sum -> sort -> cut. CPU normalizzata sul totale
-sistema (100% = tutti i core), calcolata su due letture a ~400 ms.
-Raggruppamento: identità systemd dal token più profondo (scope/service,
-contenitori come app-graphical.slice esclusi, pretty pulito); fallback per
-comm uguale; unione sep-prefix ("orca" assorbe "orca-ide"). Senza identità:
-singole o per-comm. Niente espansione figli.
-Errori: {} su stdout, una riga su stderr, exit 0 (refuse-softly).
-Solo stdlib, nessuna rete, nessuna scrittura.
+Pipeline: collect -> group -> sum -> sort -> cut. CPU is normalised to the
+whole system (100% = all cores), measured across two reads ~400 ms apart.
+Grouping: systemd identity from the deepest token (scope/service; containers
+such as app-graphical.slice skipped; cleaned-up pretty name); fallback to an
+equal comm; sep-prefix merge ("orca" absorbs "orca-ide"). Without an
+identity: single processes or per-comm. No child expansion.
+Errors: {} on stdout, one line on stderr, exit 0 (refuse-softly).
+Stdlib only, no network, no writes.
 """
 
 import json
@@ -30,16 +30,17 @@ SNAP_GAP_S = 0.4
 SORTS = ("ram", "cpu")
 GROUPEDS = ("none", "scope", "comm")
 
-# Identità app dal cgroup (verità misurata su host Hyprland/systemd, non presunta):
-# - token più profondo che termina .scope/.service (es. app-Hyprland-zen\x2dbin-
+# App identity from the cgroup (measured on a Hyprland/systemd host, not assumed):
+# - deepest token ending in .scope/.service (e.g. app-Hyprland-zen\x2dbin-
 #   XXXX.scope, app-orca-3236.scope, orca-daemon-UUID.scope, *.service in app.slice)
-# - saltati i contenitori: app-graphical.slice, app-dbus-*, app-glib-*, unità con
-#   '@' (sessioni, es. wayland-wm@*.service) — raggrupparli unirebbe il desktop.
-# - pretty: unescape \\xNN, via `app-`, via un `Hyprland-` iniziale (launcher),
-#   via suffisso `-esadecimale{4,}`, ultimo segmento puntato, sanitize esistente.
+# - containers are skipped: app-graphical.slice, app-dbus-*, app-glib-*, units
+#   with '@' (sessions, e.g. wayland-wm@*.service): grouping them would merge
+#   the whole desktop.
+# - pretty: unescape \\xNN, drop `app-`, drop a leading `Hyprland-` (launcher),
+#   drop a `-hex{4,}` suffix, keep the last dotted segment, then sanitize_name.
 CONTAINER_EXACT = ("app-graphical.slice",)
 CONTAINER_PREFIX = ("app-dbus-", "app-glib-")
-# Mai identità: contenitori systemd generici superstiti allo strip.
+# Never an identity: generic systemd containers left over after stripping.
 GENERIC_BASES = ("app", "user", "system", "init", "session")
 
 
@@ -60,9 +61,9 @@ def app_identity(cgline):
             continue
         if seg in CONTAINER_EXACT or seg.startswith(CONTAINER_PREFIX):
             continue
-        # Solo token con identità: prefisso app- o unità scope/service.
-        # `app.slice`/`user.slice`/`session.slice` non iniziano per app- e
-        # non sono scope/service: scartati qui, senza arrivare al pretty.
+        # Only tokens that carry an identity: an app- prefix or a scope/service
+        # unit. `app.slice`/`user.slice`/`session.slice` neither start with
+        # app- nor are scope/service, so they are dropped here.
         if not (seg.startswith("app-") or seg.endswith((".scope", ".service"))):
             continue
         if seg.endswith(".scope") or seg.endswith(".service"):
@@ -86,7 +87,7 @@ def app_identity(cgline):
             return pretty
     return ""
 
-# Spazio e parens sono legittimi nei nomi reali (es. "Isolated Web Co").
+# Spaces and parens are legitimate in real names (e.g. "Isolated Web Co").
 NAME_OK = set(
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     "._+:@/ -()")
@@ -135,7 +136,7 @@ def read_cgroup_first(pid):
 
 
 def snapshot_pids(want_cgroup):
-    """Ritorna {pid: (utime+stime, rss_pages, comm, ppid, cgroupline)}."""
+    """Return {pid: (utime+stime, rss_pages, comm, ppid, cgroupline)}."""
     snap = {}
     try:
         entries = os.listdir("/proc")
@@ -212,9 +213,9 @@ def build_rows(snap_a, snap_b, sys_delta, mem_total, page_kib, group):
     else:
         identified = [p for p in per_pid if p["ident"]]
         grouped_by = "scope" if identified else "comm"
-        # Secchi per chiave (identità systemd se c'è, altrimenti comm), poi
-        # unione sep-prefix: "orca" assorbe "orca-ide", senza falsi merge
-        # su estensioni alfanumeriche ("pi" non assorbe "pipewire").
+        # Bucket by key (systemd identity when present, else comm), then
+        # sep-prefix merge: "orca" absorbs "orca-ide", with no false merges
+        # on alphanumeric extensions ("pi" does not absorb "pipewire").
         buckets = {}
         for p in per_pid:
             label = p["ident"] if p["ident"] else p["comm"]
@@ -314,6 +315,6 @@ if __name__ == "__main__":
         main(sys.argv)
     except BrokenPipeError:
         pass
-    except Exception as exc:  # refuse-softly: mai traceback rumoroso
+    except Exception as exc:  # refuse-softly: never a noisy traceback
         sys.stderr.write("proc_top: %s\n" % exc)
         sys.stdout.write("{}\n")

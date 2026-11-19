@@ -122,7 +122,7 @@ Item {
       font.pixelSize: Style.font.title
       font.bold: true
       color: root.valueColor
-      Behavior on color { enabled: root.animated; ColorAnimation { duration: 240 } }
+      Behavior on color { enabled: root.animated; ColorAnimation { duration: Style.duration(240) } }
     }
 
     Text {
@@ -134,7 +134,7 @@ Item {
       font.pixelSize: Style.font.caption
       font.bold: true
       color: root.subTextColor
-      Behavior on color { enabled: root.animated; ColorAnimation { duration: 240 } }
+      Behavior on color { enabled: root.animated; ColorAnimation { duration: Style.duration(240) } }
     }
   }
 }

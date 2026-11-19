@@ -250,11 +250,11 @@ KeyboardPanel {
           radius: Style.cornerRadius
 
           Behavior on height {
-            NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+            NumberAnimation { duration: Style.duration(220); easing.type: Easing.OutCubic }
           }
           opacity: root.settingsOpen ? 1 : 0
           Behavior on opacity {
-            NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+            NumberAnimation { duration: Style.duration(180); easing.type: Easing.OutCubic }
           }
 
           Column {
@@ -953,7 +953,7 @@ KeyboardPanel {
       font.bold: infoPairRoot.valueBold
       // Off while the panel is closed: the value still updates, without
       // running an animation nobody can see.
-      Behavior on color { enabled: root.open; ColorAnimation { duration: 240 } }
+      Behavior on color { enabled: root.open; ColorAnimation { duration: Style.duration(240) } }
     }
   }
 
@@ -982,7 +982,7 @@ KeyboardPanel {
       radius: parent.radius
       color: meter.fillColor
       width: meter.ratio >= 0 ? Math.max(parent.height, Math.min(parent.width, parent.width * meter.ratio)) : 0
-      Behavior on width { enabled: root.open; NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
+      Behavior on width { enabled: root.open; NumberAnimation { duration: Style.duration(320); easing.type: Easing.OutCubic } }
     }
   }
 

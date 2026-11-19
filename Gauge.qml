@@ -73,8 +73,8 @@ Item {
         readonly property real span: body.height - root.inset * 2
         height: root.clampedRatio <= 0 ? 0 : Math.max(2, Math.round(span * root.clampedRatio))
 
-        Behavior on height { NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
-        Behavior on color { ColorAnimation { duration: 240 } }
+        Behavior on height { NumberAnimation { duration: Style.duration(320); easing.type: Easing.OutCubic } }
+        Behavior on color { ColorAnimation { duration: Style.duration(240) } }
       }
     }
   }

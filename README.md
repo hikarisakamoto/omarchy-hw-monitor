@@ -84,11 +84,11 @@ polled through `nvidia-smi` on the same interval.
 Sensor paths are found once, at load, by [`hw-probe`](hw-probe) — a small shell
 script, because working out *which* files a machine exposes means globbing
 `hwmon` and matching labels, and every vendor names its sensors differently.
-After that the resolved sysfs/`/proc` paths need no fork on a timer the way a
-Waybar custom module does: the widget reads them directly with `FileView`, which
-is what makes a two-second interval reasonable for something that runs for the
-life of your session. The documented exceptions are `nvidia-smi` (NVIDIA cards)
-and `proc_top.py` (open panel only).
+After that the resolved sysfs paths and the fixed `/proc` files need no fork on
+a timer the way a Waybar custom module does: the widget reads them directly with
+`FileView`, which is what makes a two-second interval reasonable for something
+that runs for the life of your session. The documented exceptions are
+`nvidia-smi` (NVIDIA cards) and `proc_top.py` (open panel only).
 
 `blockAllReads` is set on those views deliberately. Without it `reload()` is
 asynchronous and `text()` returns the *previous* tick's contents, so every

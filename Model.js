@@ -28,11 +28,15 @@ function toNumberSafe(value, fallback) {
   return toNumber(value, fallback)
 }
 
-// Sensor paths from the probe become FileView reads, so accept only the two
-// virtual filesystems the probe actually scans — and only clean absolute
-// forms: no '.'/'..' traversal, no empty interior segments, so a tampered
-// hw-probe cannot point the shell at arbitrary readable files.
-var SENSOR_PATH = /^\/(sys|proc)\/[A-Za-z0-9._:\/-]+$/
+// Sensor paths from the probe become blocking FileView reads on the GUI
+// thread, so accept only the two sysfs trees hw-probe scans — an hwmon device
+// or a DRM card's device — and only clean absolute forms: no '.'/'..'
+// traversal, no empty interior segments. sysfs symlinks resolve inside sysfs,
+// whereas /proc would let /proc/self/root/... reach any file on disk, so a
+// tampered hw-probe cannot point the shell at arbitrary readable files.
+// Keep this in step with the paths hw-probe emits: a shape it starts
+// producing that is not listed here is silently dropped and shows a dash.
+var SENSOR_PATH = /^\/sys\/class\/(hwmon\/hwmon\d+|drm\/card\d+\/device)\/[A-Za-z0-9._:\/-]+$/
 function safePath(value) {
   if (typeof value !== "string" || !SENSOR_PATH.test(value)) return undefined
   var parts = value.split("/")
@@ -103,7 +107,7 @@ function mixColor(from, to, t) {
 
 // Probe output is one JSON line from a helper we spawn, but treat it as
 // untrusted anyway: keep only known keys with expected types, and accept a
-// sensor path only when it lives under /sys or /proc.
+// sensor path only when it has a shape safePath allows.
 function parseProbe(raw) {
   // Until a probe lands the CPU is unknown: an empty model lets the tooltip
   // and panel header fall back instead of showing "CPU · 0C/0T".

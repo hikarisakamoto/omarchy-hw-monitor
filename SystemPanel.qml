@@ -76,10 +76,11 @@ KeyboardPanel {
   // The buffer is mutated in place: hw.cpuHistoryRev is the change signal.
   readonly property var sparklinePoints: {
     var list = []
+    if (!hw || !root.open) return list
     hw.cpuHistoryRev  // read only to re-evaluate on each in-place push
     var history = hw.cpuHistory
     var n = history ? history.length : 0
-    if (!root.open || n < 2) return list
+    if (n < 2) return list
     var w = sparklineBox.width - Style.space(8)
     var h = sparklineBox.height - Style.space(8)
     var end = history[n - 1].t

@@ -21,6 +21,9 @@ Item {
   // fill underneath makes a full gauge catch the eye in peripheral vision,
   // which is the whole point of having it there.
   property bool glow: false
+  // Off while the owner's colours jump instead of fading (the bar turns this
+  // off while it switches its foreground), so the fill snaps with them.
+  property bool colorFades: true
 
   property real bodyWidth: Math.max(6, Style.space(7))
   property real bodyHeight: Math.max(11, Style.space(14))
@@ -81,7 +84,7 @@ Item {
           NumberAnimation { duration: Style.duration(320); easing.type: Easing.OutCubic }
         }
         Behavior on color {
-          enabled: root.visible
+          enabled: root.visible && root.colorFades
           ColorAnimation { duration: Style.duration(240) }
         }
       }

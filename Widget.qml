@@ -648,6 +648,7 @@ Panel {
         trackColor: Qt.rgba(root.base.r, root.base.g, root.base.b, 0.14)
         borderColor: Qt.rgba(root.base.r, root.base.g, root.base.b, 0.4)
         glow: group.info.severity >= 1
+        colorFades: root.colorFades
       }
 
       CellText {

@@ -263,6 +263,11 @@ instead: `omarchy plugin add "$PWD" --enable` once, then
 `omarchy plugin update meviusisback.hw-monitor --yes` after each commit. That
 validates the new commit, rolls back one that fails, and reloads the shell.
 
+To cut a release, list the changes under Unreleased in
+[CHANGELOG.md](CHANGELOG.md) and run `scripts/release.sh X.Y.Z`. It bumps the
+manifest version, runs the checks, and commits and tags locally; pushing is up
+to you.
+
 ## License
 
 MIT — see [LICENSE](LICENSE). Original work by Edgar Silva; continued and

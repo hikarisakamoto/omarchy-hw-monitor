@@ -13,3 +13,6 @@ __pycache__/
 .beads-credential-key
 .beads/proxieddb/
 *.gate.lock*
+
+# Local agent workflow scripts, not part of the plugin
+.claude/workflows/

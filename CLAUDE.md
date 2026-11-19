@@ -2,7 +2,7 @@
 
 This file provides instructions and context for AI coding agents working on this project.
 
-<!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:1105d646 -->
+<!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:46cd31e7 -->
 ## Beads Issue Tracker
 
 This project uses **bd (beads)** for issue tracking. Run `bd prime` to see full workflow context and commands.
@@ -46,6 +46,7 @@ This protocol applies when ending a Beads implementation workflow. It is subordi
 
    # Team-maintainer opt-in only, unless current instructions forbid it:
    git pull --rebase
+   bd dolt push
    git push
    git status
    ```
@@ -73,8 +74,32 @@ bar.
 
 ## Architecture Overview
 
-_Add a brief overview of your project architecture_
+The shell loads these files straight from the plugin folder; there is no build
+step.
+
+- `Widget.qml`: the bar widget, the manifest's `barWidget` entry point.
+- `SystemPanel.qml`: the popup panel a left click opens.
+- `Dial.qml` and `Gauge.qml`: drawing, the panel's dials and the bar's capsule
+  gauges.
+- `Service.qml`: sampling and its timers. It reads `/proc` and `/sys` directly
+  and runs the two helpers below.
+- `GuardedProcess.qml`: runs one helper process with a timeout and an output
+  cap.
+- `Model.js`: parsing and formatting, as pure functions.
+- `hw-probe`: bash; finds this machine's sensor files once and prints them as
+  JSON.
+- `proc_top.py`: the panel's top-processes list, run only while the panel is
+  open.
 
 ## Conventions & Patterns
 
-_Add your project-specific conventions here_
+- Every tracked file ships to users: `omarchy plugin add` installs with
+  `git clone` and `omarchy plugin update` fast-forwards.
+- A user-visible change gets an entry under `## Unreleased` in `CHANGELOG.md`;
+  `scripts/release.sh` turns those notes into the version entry.
+- `scripts/check.sh` must pass before pushing. Among other checks, it fails
+  when a key's value in the manifest's `barWidget.defaults` differs from its
+  schema `defaultValue`, or only one of the two sets it.
+- Setting keys and values already in users' `shell.json` must keep working:
+  a retired value is still read, as `percentPad: "trail"` and its older name
+  `"space"` are.

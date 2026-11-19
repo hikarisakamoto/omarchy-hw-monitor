@@ -273,6 +273,11 @@ To cut a release, list the changes under Unreleased in
 manifest version, runs the checks, and commits and tags locally; pushing is up
 to you.
 
+The `.beads/`, `.agents/`, `.claude/`, `.codex/` and `.cursor/` folders,
+`AGENTS.md` and `CLAUDE.md` are contributor tooling for the beads issue tracker
+and coding agents. The plugin loads none of it, and it does nothing unless you
+open a coding agent in the plugin folder and trust it, or run `bd` there.
+
 ## License
 
 MIT — see [LICENSE](LICENSE). Original work by Edgar Silva; continued and

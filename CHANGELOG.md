@@ -23,6 +23,7 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   usage message instead of silently ignored.
 - `gpuTempIconRotation`, so the GPU temperature glyph turns on its own;
   `gpuIconRotation` now rotates only the GPU glyph.
+- A `unit-lower` chip (`45c`/`45f`) in the panel's temperature-format row.
 
 ### Changed
 
@@ -46,6 +47,20 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 - `ramFormat: "available"` is an alias of `"free"`; both show `MemAvailable`.
 - README and manifest say that `showCpuTemp`/`showGpuTemp` add the standalone
   temperature cells of `icons` mode, and list the `show`/`hide` IPC calls.
+- In the panel, `c` now selects °C and `f` selects °F; both used to toggle.
+- Panel temperatures use the bar's rule: dim up to `warnTempC`, then warming
+  to urgent at `criticalTempC`.
+- Panel chips (settings drawer, gear, top-process sort and group) use the
+  shell's own button, so a selected chip takes the theme's selected-state
+  colours and stays readable on every bundled theme.
+- The top-processes section reads in English like the rest of the panel, the
+  memory card is titled "Memory & Swap", and the CPU "Cur Load" row is "Load".
+- The panel's GPU dial says VRAM when, on a card without a load counter, it
+  shows VRAM use.
+- Panel animations follow Omarchy's animations switch, all panel bars fill
+  with the same easing, and top-process bars glide to their new length on
+  each refresh instead of being redrawn.
+- The panel no longer runs animations while it is closed.
 
 ### Fixed
 
@@ -79,6 +94,15 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 - Chromium-based browsers and Electron apps (brave, Spotify, ChatGPT) no
   longer lose their main process and its helpers to a mixed "Chromium" row;
   those processes are counted in their own app's row.
+- Panel dials warm gradually from the accent colour toward urgent between
+  `warnPercent` and `criticalPercent`, like the bar, instead of staying accent
+  until the critical threshold and then jumping to a partial blend.
+- Process memory under 1 GiB shows in MiB instead of "0.0 GiB".
+- Until the probe answers, the panel's Cores row shows "–" instead of
+  "0C / 0T". The swap rows show "–" before the first memory reading and
+  "None" in both rows when there is no swap (was "0 GiB" / "None").
+- After a failed top-processes refresh, the previous rows dim and the
+  timestamp turns urgent instead of passing for live data.
 
 ## 1.2.1 — 2026-10-16
 

@@ -158,6 +158,11 @@ omarchy bar set meviusisback.hw-monitor fahrenheit true --json
 | `gpuTempIcon` | string | `"󰔏"` | Glyph marking the GPU temperature figure. |
 | `ramIcon` | string | `""` | Glyph marking the RAM figure. |
 | `clockIcon` | string | `"󰓅"` | Glyph marking the clock figure. Empty draws the number alone. |
+| `gpuIconRotation` | int | `0` | Rotate the GPU glyph, in degrees (-360 to 360). Also rotates the GPU temperature glyph. |
+| `cpuIconRotation` | int | `0` | Rotate the CPU glyph, in degrees (-360 to 360). |
+| `tempIconRotation` | int | `0` | Rotate the CPU temperature glyph, in degrees (-360 to 360). |
+| `ramIconRotation` | int | `0` | Rotate the RAM glyph, in degrees (-360 to 360). The clock glyph has no rotation key. |
+| `padOpacity` | number | `0.3` | Opacity (0–1) of the leading zero drawn when `percentPad` is `"zero"`. |
 | `iconSize` | int | `0` | Overall scale in pixels. `0` follows the bar's icon font. |
 | `refreshIntervalSec` | int | `2` | Seconds between samples. `1` is as fast as `FileView` makes sense; `5` is plenty for a background bar. |
 | `gpu` | string | `"auto"` | `"auto"` picks the card reporting load; otherwise an index (`0`, `1`) or name substring. |

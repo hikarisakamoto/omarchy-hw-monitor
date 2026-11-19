@@ -50,8 +50,13 @@
       "gpuTempIcon": "\udb81\udd0f",
       "ramIcon": "\uefc5",
       "clockIcon": "\udb81\udcc5",
+      "gpuIconRotation": 0,
+      "cpuIconRotation": 0,
+      "tempIconRotation": 0,
+      "ramIconRotation": 0,
       "clickCommand": "",
       "percentPad": "none",
+      "padOpacity": 0.3,
       "monitors": ""
     },
     "schema": [
@@ -266,7 +271,7 @@
         "max": 1,
         "step": 0.05,
         "defaultValue": 0.3,
-        "description": "Opacity of the padded percentage background (0-1)."
+        "description": "Opacity (0-1) of the leading zero drawn when percentPad is 'zero'."
       },
       {
         "key": "gpuIconRotation",
@@ -276,7 +281,7 @@
         "max": 360,
         "step": 1,
         "defaultValue": 0,
-        "description": "Rotate the GPU glyph (0, 90, 180, 270)."
+        "description": "Rotate the GPU load and GPU temperature glyphs (0, 90, 180, 270)."
       },
       {
         "key": "cpuIconRotation",

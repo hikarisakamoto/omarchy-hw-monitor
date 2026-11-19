@@ -84,6 +84,9 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 - A sensor path from the probe is accepted only inside the two sysfs trees the
   probe scans (`/sys/class/hwmon`, `/sys/class/drm`). `/proc` paths, whose
   magic links can reach any file, are refused.
+- On a vertical bar (position left or right), which draws no figures, gauges
+  are on by default in every mode, so the default `icons` readout no longer
+  shows bare glyphs there. `showGauges: false` still turns them off.
 
 ### Fixed
 

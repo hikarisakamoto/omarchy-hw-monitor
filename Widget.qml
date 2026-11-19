@@ -41,7 +41,9 @@ Panel {
   readonly property bool labelled: mode === "labels" && !vertical
   readonly property bool showTemps: mode !== "compact" && !vertical
   readonly property bool showValues: (labelled || mode === "icons" || boolSetting("showValues", false)) && !vertical
-  readonly property bool showGauges: boolSetting("showGauges", mode !== "icons" && mode !== "labels")
+  // A vertical bar has no room for figures, so unset gauges are on there in
+  // every mode; otherwise they default on only in compact and full.
+  readonly property bool showGauges: boolSetting("showGauges", vertical || (mode !== "icons" && mode !== "labels"))
   // showClocksSetting is the saved value (the drawer shows and toggles it);
   // showClocks is what the bar draws, never on a vertical bar.
   readonly property bool showClocksSetting: boolSetting("showClocks", false)

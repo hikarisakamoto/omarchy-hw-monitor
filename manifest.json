@@ -199,7 +199,7 @@
         "key": "showGauges",
         "type": "boolean",
         "label": "Show vertical gauges",
-        "description": "Show vertical battery-style capsule gauges in the bar. Unset, they are on in compact and full and off in icons and labels. A set value overrides the mode, but the labels readout never draws gauges."
+        "description": "Show vertical battery-style capsule gauges in the bar. Unset, they are on in compact and full and off in icons and labels, except on a vertical bar (position left or right): it has no room for figures, so there they are on in every mode. A set value overrides the default, but the labels readout never draws gauges on a horizontal bar."
       },
       {
         "key": "showValues",

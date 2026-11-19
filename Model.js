@@ -393,19 +393,27 @@ function formatRpm(rpm) {
 
 // Defence in depth: proc_top.py already sanitises everything, but a
 // subprocess's stdout is untrusted input, so it is validated again here.
-// Always returns {rows, groupedBy} (no rows on any unexpected shape); keeps at
-// most maxN rows, cuts names to 48 chars and clamps numbers to their ranges.
-// The collector's order (by the chosen metric) is preserved.
+// Always returns {ok, rows, groupedBy}: ok is true only when the payload
+// parsed and `procs` was an array (an empty or fully filtered list is still
+// ok); any other shape returns ok false and no rows. Keeps at most maxN rows,
+// cuts names to 48 chars and clamps numbers to their ranges. The collector's
+// order (by the chosen metric) is preserved.
 var PROC_TOP_MAX = 12 // proc_top.py TOP_MAX
 var PROC_NAME_MAX = 48
 var PROC_COUNT_MAX = 16384 // proc_top.py PID_CAP: no group can hold more
 var PROC_GROUPEDS = ["none", "scope", "comm"]
 
+// Output caps for the helpers Service.qml spawns, shared by the parser and the
+// byte guards so the two cannot drift apart. Counted in UTF-16 code units
+// (String.length), not bytes. Untampered output is one line of a few KB.
+var PROC_TOP_MAX_CHARS = 16384
+var HELPER_MAX_CHARS = 65536
+
 function parseProcTop(raw, maxN) {
-  var out = { rows: [], groupedBy: "none" }
+  var out = { ok: false, rows: [], groupedBy: "none" }
   var limit = maxN === undefined ? PROC_TOP_MAX : Math.max(1, Math.min(PROC_TOP_MAX, toNumber(maxN, PROC_TOP_MAX)))
   var text = String(raw || "").trim()
-  if (text === "" || text.length > 16384) return out
+  if (text === "" || text.length > PROC_TOP_MAX_CHARS) return out
   var parsed = null
   try {
     parsed = JSON.parse(text)
@@ -413,6 +421,7 @@ function parseProcTop(raw, maxN) {
     return out
   }
   if (!parsed || !(parsed.procs instanceof Array)) return out
+  out.ok = true
   var rawGroupedBy = parsed.groupedBy
   var groupedBy = (typeof rawGroupedBy === "string" || typeof rawGroupedBy === "number")
     ? String(rawGroupedBy) : "none"

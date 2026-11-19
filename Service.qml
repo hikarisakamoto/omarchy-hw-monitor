@@ -372,14 +372,9 @@ Item {
         // onExited, not here — a helper that closes stdout and then hangs
         // must still be killed.
         var res = null
-        try { res = Model.parseProcTop(text, 12) } catch (e) { res = null }
-        if (!res) {
-          root.procTopFailed = true
-          return
-        }
-        var list = res.rows
-        if (list.length > 0 || String(text).indexOf('"procs"') !== -1) {
-          root.topProcs = list
+        try { res = Model.parseProcTop(text, root.topProcCount) } catch (e) { res = null }
+        if (res && res.ok) {
+          root.topProcs = res.rows
           root.procGroupedBy = res.groupedBy
           root.procTopFailed = false
           // A fixed pattern, so the digits stay ASCII whatever the locale.
@@ -482,7 +477,7 @@ Item {
     onTriggered: {
       var len = String(procTopOut.text).length
       var err = String(procTopProcess.stderr.text).length
-      if ((len !== root._procTopBase && len > 16384) || err > 16384) {
+      if ((len !== root._procTopBase && len > Model.PROC_TOP_MAX_CHARS) || err > Model.PROC_TOP_MAX_CHARS) {
         procTopProcess.running = false
         procTopKillTimer.restart()
       }
@@ -497,7 +492,7 @@ Item {
     onTriggered: {
       var len = String(probeOut.text).length
       var err = String(probeProcess.stderr.text).length
-      if ((len !== root._probeBase && len > 65536) || err > 65536) {
+      if ((len !== root._probeBase && len > Model.HELPER_MAX_CHARS) || err > Model.HELPER_MAX_CHARS) {
         probeProcess.running = false
         probeKillTimer.restart()
       }
@@ -512,7 +507,7 @@ Item {
     onTriggered: {
       var len = String(nvidiaProcess.stdout.text).length
       var err = String(nvidiaProcess.stderr.text).length
-      if ((len !== root._nvidiaBase && len > 65536) || err > 65536) {
+      if ((len !== root._nvidiaBase && len > Model.HELPER_MAX_CHARS) || err > Model.HELPER_MAX_CHARS) {
         nvidiaProcess.running = false
         nvidiaKillTimer.restart()
       }

@@ -1,8 +1,6 @@
 import QtQuick
 import QtQuick.Controls as Controls
 import QtQuick.Shapes
-import Quickshell
-import Quickshell.Io
 import qs.Ui
 import qs.Commons
 import "Model.js" as Model
@@ -31,8 +29,6 @@ KeyboardPanel {
   property string ramFormat: "used/total"
   property string tempFormat: "degree-unit"
   property bool settingsOpen: false
-
-  signal fahrenheitToggled()
 
   function persistSetting(key, value) {
     if (root.owner && typeof root.owner.persistSetting === "function") {

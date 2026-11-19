@@ -7,11 +7,9 @@ import qs.Commons
 Item {
   id: root
 
-  property string label: ""
   property string title: ""
-  property real value: 0
-  property real max: 100
-  property real ratio: -1
+  // How much of the arc to fill, 0..1.
+  property real ratio: 0
   property string valueText: ""
   property string subText: ""
   property int severity: 0
@@ -32,8 +30,8 @@ Item {
   property real arcWidth: Math.max(3, Style.space(4))
   property string fontFamily: Style.font.family
 
-  readonly property string displayTitle: title !== "" ? title : label
-  readonly property real fraction: ratio >= 0 ? Math.max(0, Math.min(1, ratio)) : (max > 0 ? Math.max(0, Math.min(1, value / max)) : 0)
+  // A NaN ratio reads as an empty arc rather than poisoning the sweep angles.
+  readonly property real fraction: isFinite(ratio) ? Math.max(0, Math.min(1, ratio)) : 0
   readonly property bool arcVisible: fraction > 0.004
 
   // 0° is 3 o'clock, increasing clockwise
@@ -109,7 +107,7 @@ Item {
     Text {
       textFormat: Text.PlainText
       anchors.horizontalCenter: parent.horizontalCenter
-      text: root.displayTitle.toUpperCase()
+      text: root.title.toUpperCase()
       font.family: root.fontFamily
       font.pixelSize: Style.font.caption
       font.bold: true
@@ -120,7 +118,7 @@ Item {
     Text {
       textFormat: Text.PlainText
       anchors.horizontalCenter: parent.horizontalCenter
-      text: root.valueText !== "" ? root.valueText : (root.fraction >= 0 ? Math.round(root.fraction * 100) + "%" : "–")
+      text: root.valueText !== "" ? root.valueText : Math.round(root.fraction * 100) + "%"
       font.family: root.fontFamily
       font.pixelSize: Style.font.title
       font.bold: true

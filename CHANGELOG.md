@@ -159,6 +159,9 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 - When `nvidia-smi` fails (a driver/library mismatch after an update, a GPU
   lost after suspend) or is killed for hanging, the GPU readout shows dashes
   instead of freezing at the last values.
+- When `nvidia-smi` can no longer be started at all (removed or replaced while
+  the shell runs), the GPU readout turns to dashes instead of freezing at the
+  last values, and a hardware probe that cannot start is retried.
 - With `showTopProcs: false` the open panel no longer runs the top-processes
   helper every 3 seconds for a section it does not show.
 - Malformed, truncated or oversized top-processes output no longer empties the

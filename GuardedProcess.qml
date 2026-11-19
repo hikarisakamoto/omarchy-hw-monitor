@@ -26,6 +26,12 @@ import Quickshell.Io
 // The cap is checked again on delivery: a burst written between two polls
 // (or before the first) still reaches the collector whole, so a run over its
 // cap hands `finished` "" too, and no parser ever sees more than byteCap.
+//
+// A command that cannot be started (missing, not executable, bad interpreter)
+// gives only `running` going back to false from Quickshell: no started,
+// stream-finished or exited signal (verified on 0.3.2). The guard reports it
+// as finished("") + exited(), like a run that produced nothing, and never as
+// timedOut.
 Item {
   id: guard
 
@@ -35,12 +41,13 @@ Item {
 
   readonly property bool running: proc.running
 
-  // Stdout closed; `text` is this run's output, or "" if it wrote none or
-  // its stdout or stderr passed byteCap.
+  // Stdout closed; `text` is this run's output, or "" if it wrote none, its
+  // stdout or stderr passed byteCap, or it never started.
   signal finished(string text)
   // The watchdog fired and the run is being terminated.
   signal timedOut()
-  // The process exited; its watchdog and kill timer are already disarmed.
+  // The process exited, or never started; its watchdog and kill timer are
+  // already disarmed.
   signal exited()
 
   // Teardown veto: once set, no timer or handler touches anything again.
@@ -49,6 +56,9 @@ Item {
   // for the current run's bytes.
   property bool _fresh: false
   property bool _errFresh: false
+  // A run was spawned and the process has neither started, exited, nor been
+  // reported as failed to start.
+  property bool _pending: false
 
   // Start a run unless one is still in flight. Returns whether it started.
   function spawn(command) {
@@ -57,6 +67,7 @@ Item {
     _fresh = false
     _errFresh = false
     watchdog.restart()
+    _pending = true
     proc.running = true
     return true
   }
@@ -80,6 +91,7 @@ Item {
   // Component.onDestruction so no in-flight callback runs during teardown.
   function shutdown() {
     _destroyed = true
+    _pending = false
     watchdog.stop()
     killTimer.stop()
     if (proc.running) proc.running = false
@@ -103,10 +115,20 @@ Item {
       waitForEnd: false
       onDataChanged: guard._errFresh = true
     }
+    onStarted: guard._pending = false
     onExited: {
+      guard._pending = false
       if (guard._destroyed) return
       watchdog.stop()
       killTimer.stop()
+      guard.exited()
+    }
+    onRunningChanged: {
+      if (guard._destroyed || running || !guard._pending) return
+      guard._pending = false
+      watchdog.stop()
+      killTimer.stop()
+      guard.finished("")
       guard.exited()
     }
   }

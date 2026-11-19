@@ -103,7 +103,9 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   top-processes rows instead of all sharing one "gtk-launch" row.
 - Bar cells update in place on each sample instead of being rebuilt, so their
   colour and gauge-fill animations run, and only the bar's own orientation
-  holds cells.
+  holds cells. Like the panel's, those animations follow Omarchy's animations
+  switch, and cell colours snap with the rest of the bar when its background
+  changes.
 - The width reserved for a temperature figure follows `tempFormat`, so the
   narrower formats no longer leave a gap after the figure.
 - With `ramFormat: "available"` the settings drawer now marks the Free chip.

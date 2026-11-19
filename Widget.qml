@@ -161,6 +161,9 @@ Panel {
   readonly property color base: bar ? bar.barForeground : Color.foreground
   readonly property color hot: bar ? bar.urgent : Color.urgent
   readonly property color dim: Qt.darker(base, 1.45)
+  // Cell colours fade (over Style.duration, so never with reduce motion on)
+  // except while the bar jumps its own foreground, as Ui/WidgetButton does.
+  readonly property bool colorFades: !bar || bar.foregroundAnimationEnabled
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
 
   // Dim up to warnTempC, then from the plain foreground toward urgent as the
@@ -535,7 +538,10 @@ Panel {
     font.pixelSize: root.valueSize
     verticalAlignment: Text.AlignVCenter
     renderType: Text.NativeRendering
-    Behavior on color { ColorAnimation { duration: 240 } }
+    Behavior on color {
+      enabled: root.colorFades
+      ColorAnimation { duration: Style.duration(240) }
+    }
   }
 
   // A component group: glyph + figure (+ temp). modelData is the cell's key.
@@ -586,7 +592,10 @@ Panel {
           fontFamily: root.fontFamily
           fontSize: root.iconSize
           color: group.tone
-          Behavior on color { ColorAnimation { duration: 240 } }
+          Behavior on color {
+            enabled: root.colorFades
+            ColorAnimation { duration: Style.duration(240) }
+          }
         }
 
         Text {
@@ -599,7 +608,10 @@ Panel {
           font.family: root.fontFamily
           font.pixelSize: root.iconSize
           renderType: Text.NativeRendering
-          Behavior on color { ColorAnimation { duration: 240 } }
+          Behavior on color {
+            enabled: root.colorFades
+            ColorAnimation { duration: Style.duration(240) }
+          }
         }
       }
 

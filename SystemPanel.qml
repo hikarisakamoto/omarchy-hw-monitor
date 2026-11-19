@@ -50,9 +50,10 @@ KeyboardPanel {
   readonly property color memColor: Model.mixColor(baseColor, hotColor, memSeverity)
   readonly property color vramColor: Model.mixColor(baseColor, hotColor, vramSeverity)
 
+  // Dim up to warnTempC, then warming toward urgent at criticalTempC, the
+  // same ramp the bar uses. A missing reading (-1) stays dim.
   function tempColor(tempC) {
-    if (!(tempC >= 50)) return dimColor
-    return Model.mixColor(baseColor, hotColor, (tempC - 50) / Math.max(1, criticalTempC - 50))
+    return Model.mixColor(dimColor, hotColor, Model.severity(tempC, warnTempC, criticalTempC))
   }
 
   // Ring buffer for the last 60 seconds of CPU samples.

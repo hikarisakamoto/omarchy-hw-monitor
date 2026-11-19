@@ -108,15 +108,24 @@ Item {
     return Model.enumSetting(setting(name, fallback), options, fallback)
   }
 
+  // Both readers reload their file and return -1 when it has no path (the
+  // selected card does not expose that sensor) or the read fails. sample()
+  // assigns every reading on every tick, so after a card switch a sensor the
+  // new card lacks shows a dash instead of the previous card's value.
+
   // hwmon reports temperatures in millidegrees, but a handful of drivers
   // report whole degrees. Anything under 200 is already in degrees.
   function readTemp(view) {
+    if (view.path === "") return -1
+    view.reload()
     var raw = Model.toNumber(view.text(), -1)
     if (!isFinite(raw) || raw <= 0) return -1
     return raw > 200 ? raw / 1000 : raw
   }
 
   function readNumber(view, divisor) {
+    if (view.path === "") return -1
+    view.reload()
     var raw = Model.toNumber(view.text(), -1)
     if (!isFinite(raw) || raw < 0) return -1
     return divisor ? raw / divisor : raw
@@ -146,44 +155,20 @@ Item {
     loadFile.reload()
     load = Model.parseLoadAverage(loadFile.text())
 
-    if (cpuTempFile.path !== "") {
-      cpuTempFile.reload()
-      cpuTempC = readTemp(cpuTempFile)
-    }
+    cpuTempC = readTemp(cpuTempFile)
 
     if (gpuIsNvidia) {
       sampleNvidia()
       return
     }
 
-    if (gpuBusyFile.path !== "") {
-      gpuBusyFile.reload()
-      gpuPercent = readNumber(gpuBusyFile, 0)
-    }
-    if (gpuTempFile.path !== "") {
-      gpuTempFile.reload()
-      gpuTempC = readTemp(gpuTempFile)
-    }
-    if (gpuPowerFile.path !== "") {
-      gpuPowerFile.reload()
-      gpuWatts = readNumber(gpuPowerFile, 1000000)
-    }
-    if (gpuFanFile.path !== "") {
-      gpuFanFile.reload()
-      gpuRpm = readNumber(gpuFanFile, 0)
-    }
-    if (gpuClockFile.path !== "") {
-      gpuClockFile.reload()
-      gpuMhz = readNumber(gpuClockFile, 1000000)
-    }
-    if (gpuVramUsedFile.path !== "") {
-      gpuVramUsedFile.reload()
-      gpuVramUsedBytes = readNumber(gpuVramUsedFile, 0)
-    }
-    if (gpuVramTotalFile.path !== "") {
-      gpuVramTotalFile.reload()
-      gpuVramTotalBytes = readNumber(gpuVramTotalFile, 0)
-    }
+    gpuPercent = readNumber(gpuBusyFile, 0)
+    gpuTempC = readTemp(gpuTempFile)
+    gpuWatts = readNumber(gpuPowerFile, 1000000)
+    gpuRpm = readNumber(gpuFanFile, 0)
+    gpuMhz = readNumber(gpuClockFile, 1000000)
+    gpuVramUsedBytes = readNumber(gpuVramUsedFile, 0)
+    gpuVramTotalBytes = readNumber(gpuVramTotalFile, 0)
   }
 
   function sampleNvidia() {
@@ -205,6 +190,10 @@ Item {
     gpuWatts = sample.watts
     gpuVramUsedBytes = sample.vramUsedBytes
     gpuVramTotalBytes = sample.vramTotalBytes
+    // nvidia-smi reports no fan RPM or clock here; clear what a sysfs card
+    // selected before this one may have left behind.
+    gpuRpm = -1
+    gpuMhz = -1
   }
 
   // Spawns proc_top.py at most every 3 s. Only allowlisted values reach argv
@@ -253,8 +242,8 @@ Item {
   SensorFile { id: loadFile; path: "/proc/loadavg" }
   SensorFile { id: cpuTempFile; path: root.cpuInfo && root.cpuInfo.tempPath ? String(root.cpuInfo.tempPath) : "" }
 
-  // A GPU sensor the card does not expose leaves its path empty, and sample()
-  // skips it — the widget then renders a dash rather than a fake zero.
+  // A GPU sensor the card does not expose leaves its path empty, and its
+  // reading stays -1 — the widget then renders a dash rather than a fake zero.
   SensorFile { id: gpuBusyFile; path: root.gpuPath("busyPath") }
   SensorFile { id: gpuTempFile; path: root.gpuPath("tempPath") }
   SensorFile { id: gpuPowerFile; path: root.gpuPath("powerPath") }

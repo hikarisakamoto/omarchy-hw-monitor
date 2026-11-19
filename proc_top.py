@@ -51,6 +51,11 @@ CONTAINER_EXACT = ("app-graphical.slice",)
 CONTAINER_PREFIX = ("app-dbus-", "app-glib-")
 # Never an identity: generic systemd containers left over after stripping.
 GENERIC_BASES = ("app", "user", "system", "init", "session")
+# Never an identity either: launchers whose scope is named after themselves,
+# not the app they start (app-Hyprland-gtk\x2dlaunch-XXXX.scope carries no
+# app name), so every app opened through them would merge into one row.
+# Their processes fall back to comm.
+LAUNCHERS = ("gtk-launch",)
 
 
 def unescape_unit(text: str) -> str:
@@ -94,7 +99,7 @@ def app_identity(cgline: str) -> str:
         base = re.sub(r"(-[0-9a-fA-F]{4,})+$", "", base)
         if "." in base:
             base = base.split(".")[-1]
-        if base in GENERIC_BASES:
+        if base in GENERIC_BASES or base in LAUNCHERS:
             continue
         pretty = sanitize_name(base)
         if pretty and pretty != "?":

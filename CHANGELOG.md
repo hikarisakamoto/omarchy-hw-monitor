@@ -54,6 +54,8 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   silently left out of the top-processes list (the scan bound is now 16384).
 - Non-ASCII app names from systemd units show one placeholder dot per
   character instead of one per byte.
+- Apps started through `gtk-launch` (Spotify, for example) get their own
+  top-processes rows instead of all sharing one "gtk-launch" row.
 
 ## 1.2.1 — 2026-10-16
 

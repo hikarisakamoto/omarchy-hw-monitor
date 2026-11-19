@@ -284,8 +284,10 @@ function parseMemory(raw) {
 // ------------------------------------------------------------------ nvidia
 //
 // nvidia-smi --query-gpu=utilization.gpu,temperature.gpu,memory.used,
-// memory.total,power.draw --format=csv,noheader,nounits
-// Unsupported fields come back as "[N/A]".
+// memory.total,power.draw,clocks.gr --format=csv,noheader,nounits
+// Unsupported fields come back as "[N/A]". New fields go at the end, so a
+// shorter line from an older query still parses. There is no fan RPM:
+// nvidia-smi only reports fan.speed as a percentage of maximum.
 
 function parseNvidia(raw) {
   var line = String(raw || "").trim().split("\n")[0]
@@ -307,7 +309,8 @@ function parseNvidia(raw) {
     tempC: value(1),
     vramUsedBytes: value(2) >= 0 ? value(2) * 1048576 : -1,
     vramTotalBytes: value(3) >= 0 ? value(3) * 1048576 : -1,
-    watts: parts.length > 4 ? value(4) : -1
+    watts: parts.length > 4 ? value(4) : -1,
+    mhz: parts.length > 5 ? value(5) : -1
   }
 }
 

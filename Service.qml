@@ -177,7 +177,7 @@ Item {
     // re-resolves nvidia-smi from the session PATH at sample time.
     var bin = gpuInfo && gpuInfo.nvidiaPath ? String(gpuInfo.nvidiaPath) : "nvidia-smi"
     nvidiaProcess.spawn([bin,
-                         "--query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,power.draw",
+                         "--query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,power.draw,clocks.gr",
                          "--format=csv,noheader,nounits",
                          "--id=" + String(gpuInfo.index !== undefined ? gpuInfo.index : 0)])
   }
@@ -188,16 +188,16 @@ Item {
   // fallen off the bus" after suspend, a wedged nvidia-smi).
   function applyNvidia(raw) {
     var sample = Model.parseNvidia(raw)
-      || { busy: -1, tempC: -1, watts: -1, vramUsedBytes: -1, vramTotalBytes: -1 }
+      || { busy: -1, tempC: -1, watts: -1, vramUsedBytes: -1, vramTotalBytes: -1, mhz: -1 }
     gpuPercent = sample.busy
     gpuTempC = sample.tempC
     gpuWatts = sample.watts
     gpuVramUsedBytes = sample.vramUsedBytes
     gpuVramTotalBytes = sample.vramTotalBytes
-    // nvidia-smi reports no fan RPM or clock here; clear what a sysfs card
-    // selected before this one may have left behind.
+    gpuMhz = sample.mhz
+    // nvidia-smi reports fan speed only as a percentage, not RPM; clear what a
+    // sysfs card selected before this one may have left behind.
     gpuRpm = -1
-    gpuMhz = -1
   }
 
   // Spawns proc_top.py at most every 3 s. Only allowlisted values reach argv

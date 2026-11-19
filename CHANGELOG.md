@@ -14,8 +14,9 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 ### Added
 
 - `scripts/check.sh`, a pre-push check (manifest validation, manifest defaults
-  against the schema, syntax of every helper and QML file), and
-  `scripts/release.sh` with this changelog.
+  against the schema, syntax of every helper and QML file, the `Model.js`
+  behaviour tests in `scripts/model-test.qml`, and that every `Model.` name the
+  QML uses exists), and `scripts/release.sh` with this changelog.
 - README: a Development section on trying a checkout in your own bar.
 - README: a note that settings saved from the widget go to every placement
   when it is placed more than once, with the per-monitor workaround.

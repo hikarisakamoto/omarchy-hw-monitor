@@ -247,9 +247,12 @@ scripts/check.sh
 ```
 
 It validates the manifest the way `omarchy plugin add` does, checks that the
-manifest `defaults` match the schema, and syntax-checks `hw-probe`,
-`proc_top.py`, `Model.js` and the QML files. `shellcheck` and `pyflakes` also
-run when installed.
+manifest `defaults` match the schema, syntax-checks `hw-probe`, `proc_top.py`,
+`Model.js` and the QML files, runs the `Model.js` behaviour tests in
+`scripts/model-test.qml` with Qt's `qml` tool (no display needed), and checks
+that every `Model.` name the QML uses exists. When you change a parser or
+formatter in `Model.js`, add a case to `scripts/model-test.qml`. `shellcheck`
+and `pyflakes` also run when installed.
 
 To try uncommitted changes in your own bar, link your checkout in place of the
 installed copy. Parking the installed copy under a dot-name keeps it out of the

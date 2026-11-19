@@ -1,7 +1,9 @@
 #!/bin/bash
 # Checks to run before pushing: the manifest the way `omarchy plugin add`
-# validates it, manifest defaults against the schema, and a syntax pass over
-# every helper and QML file. shellcheck and pyflakes run when installed.
+# validates it, manifest defaults against the schema, a syntax pass over every
+# helper and QML file, the Model.js behaviour tests in scripts/model-test.qml,
+# and that every Model.x the QML calls exists. shellcheck and pyflakes run
+# when installed.
 #
 # Nothing here writes inside the repo: an installed copy of the plugin is
 # watched for file changes, and a write there reloads the running widget.
@@ -57,6 +59,36 @@ if [[ -x $qmllint ]]; then
   done
 else
   skip "qmllint" "qmllint"
+fi
+
+# Model.js behaviour, in a QCoreApplication so no display is needed. The FAIL
+# lines go to stderr: QT_FORCE_STDERR_LOGGING keeps them there when stderr is
+# not a tty (Qt would send them to the journal), QML_DISABLE_DISK_CACHE keeps
+# .qmlc files out of the tree, and timeout ends a test that never exits.
+qml=$(command -v qml || echo /usr/lib/qt6/bin/qml)
+if [[ -x $qml ]]; then
+  QT_FORCE_STDERR_LOGGING=1 QML_DISABLE_DISK_CACHE=1 timeout 20 "$qml" -a core scripts/model-test.qml
+  case $? in
+    0) ok "Model.js behaviour" ;;
+    124) bad "Model.js behaviour (timed out)" ;;
+    *) bad "Model.js behaviour" ;;
+  esac
+else
+  skip "Model.js behaviour" "qml"
+fi
+
+# Every Model.x the QML calls must be defined in Model.js; a typo there is a
+# TypeError only at runtime. The match is textual: // comments are stripped
+# first, but a Model.x inside a string still counts, and only column-0
+# function/var/const/let definitions in Model.js are seen.
+used=$(sed -E 's#(^|[[:space:]])//.*##' *.qml | grep -ohE '\bModel\.[A-Za-z_][A-Za-z0-9_]*\b' |
+  grep -vx 'Model\.js' | cut -d. -f2 | sort -u)
+defined=$(grep -oE '^(function|var|const|let) +[A-Za-z_][A-Za-z0-9_]*' Model.js | awk '{print $2}' | sort -u)
+missing=$(comm -23 <(printf '%s\n' "$used") <(printf '%s\n' "$defined"))
+if [[ -n $missing ]]; then
+  bad "Model.* names used in QML exist in Model.js; missing: ${missing//$'\n'/, }"
+else
+  ok "Model.* names used in QML exist in Model.js"
 fi
 
 if command -v shellcheck >/dev/null; then

@@ -381,9 +381,10 @@ if __name__ == "__main__":
         pass
     except SystemExit as exc:
         # argparse rejected an argument (code 2, usage already on stderr).
-        # Still print {}: with no stdout bytes Service.qml's collector would
-        # re-read the previous run's text as fresh. --help exits 0 and must
-        # not get JSON after its text.
+        # Still print {} so the consumer gets an explicit failure payload
+        # (parseProcTop -> ok:false); GuardedProcess already hands a run with
+        # no stdout to its consumer as "", never the previous run's text.
+        # --help exits 0 and must not get JSON after its text.
         if exc.code:
             sys.stdout.write("{}\n")
         raise

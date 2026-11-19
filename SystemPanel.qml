@@ -63,10 +63,11 @@ KeyboardPanel {
     return Model.formatGib(usedGib) + " / " + Model.formatGib(totalGib) + " GiB (" + Model.formatPercent(percent) + ")"
   }
 
-  // Dim up to warnTempC, then warming toward urgent at criticalTempC, the
-  // same ramp the bar uses. A missing reading (-1) stays dim.
+  // The bar's rule: muted up to warnTempC (and for a missing reading), then
+  // the base colour warming to urgent at criticalTempC.
   function tempColor(tempC) {
-    return Model.mixColor(mutedColor, hotColor, Model.severity(tempC, warnTempC, criticalTempC))
+    var t = Model.severity(tempC, warnTempC, criticalTempC)
+    return t > 0 ? Model.mixColor(baseColor, hotColor, t) : mutedColor
   }
 
   // Ring buffer for the last 60 seconds of CPU samples.

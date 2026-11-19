@@ -72,6 +72,9 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   with the same easing, and top-process bars glide to their new length on
   each refresh instead of being redrawn.
 - The panel no longer runs animations while it is closed.
+- The bar no longer animates the gauges it does not draw (`icons` and `labels`
+  modes), so a GPU load flickering between 0 and 1% no longer renders about
+  320 ms of bar frames for nothing.
 - The panel's 60-second CPU load history is recorded in the background (one
   array push per sample, no extra reads), so the sparkline is already full
   when the panel opens, and its time axis stays to scale at any

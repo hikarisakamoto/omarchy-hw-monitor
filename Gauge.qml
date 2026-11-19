@@ -73,8 +73,17 @@ Item {
         readonly property real span: body.height - root.inset * 2
         height: root.clampedRatio <= 0 ? 0 : Math.max(2, Math.round(span * root.clampedRatio))
 
-        Behavior on height { NumberAnimation { duration: Style.duration(320); easing.type: Easing.OutCubic } }
-        Behavior on color { ColorAnimation { duration: Style.duration(240) } }
+        // Animate only a gauge that is drawn: the bar keeps one in every cell,
+        // hidden in icons and labels, and a hidden fill that animates still
+        // renders frames for nothing.
+        Behavior on height {
+          enabled: root.visible
+          NumberAnimation { duration: Style.duration(320); easing.type: Easing.OutCubic }
+        }
+        Behavior on color {
+          enabled: root.visible
+          ColorAnimation { duration: Style.duration(240) }
+        }
       }
     }
   }

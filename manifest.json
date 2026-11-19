@@ -157,11 +157,10 @@
           "used/total",
           "used",
           "percent",
-          "free",
-          "available"
+          "free"
         ],
         "defaultValue": "used/total",
-        "description": "'used/total' (12/23G), 'used' (12.3G), 'percent' (52%), 'free' (11.1G), or 'available' (11.1G)."
+        "description": "'used/total' (12/23G), 'used' (12.3G), 'percent' (52%), or 'free' (11.1G: MemAvailable, what a new program can use without swapping). 'available' is accepted as another name for 'free'."
       },
       {
         "key": "tempFormat",

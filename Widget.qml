@@ -76,8 +76,12 @@ Panel {
   // ------------------------------------------------------------ formatting
 
   readonly property bool fahrenheit: boolSetting("fahrenheit", false)
-  readonly property string ramFormat: enumSetting("ramFormat",
-    ["used/total", "used", "percent", "free", "available"], "used/total")
+  // "free" is MemAvailable, what a new program can get without swapping;
+  // "available" is accepted as another name for it.
+  readonly property string ramFormat: {
+    var want = enumSetting("ramFormat", ["used/total", "used", "percent", "free", "available"], "used/total")
+    return want === "available" ? "free" : want
+  }
 
   readonly property string tempFormat: enumSetting("tempFormat",
     ["degree-unit", "degree", "unit", "unit-lower", "bare"], "degree-unit")
@@ -234,7 +238,7 @@ Panel {
       return Model.formatGibPrecise(usedGib) + "G"
     }
 
-    if (ramFormat === "free" || ramFormat === "available") {
+    if (ramFormat === "free") {
       return Model.formatGibPrecise(availGib) + "G"
     }
 

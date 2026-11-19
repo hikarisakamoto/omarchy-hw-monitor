@@ -390,7 +390,8 @@ KeyboardPanel {
           }
 
           PanelDial {
-            title: "GPU"
+            // Says VRAM when the card has no load counter and the figure is VRAM use.
+            title: hw.hasGpu && hw.gpuPercent < 0 && hw.gpuVramPercent >= 0 ? "VRAM" : "GPU"
             valueText: hw.hasGpu ? Model.formatPercent(root.gpuMeter) : "N/A"
             subText: hw.hasGpu && hw.gpuTempC > 0 ? Model.formatTemp(hw.gpuTempC, root.fahrenheit) : (hw.hasGpu && hw.gpuWatts >= 0 ? Model.formatWatts(hw.gpuWatts) : "")
             subTextColor: root.tempColor(hw.gpuTempC)
@@ -513,7 +514,7 @@ KeyboardPanel {
                 valueColor: root.tempColor(hw.cpuTempC)
               }
               InfoPair {
-                label: "Cur Load"
+                label: "Load"
                 value: Model.formatPercent(hw.cpuPercent)
                 valueColor: root.cpuColor
               }
@@ -548,7 +549,7 @@ KeyboardPanel {
         // 5. Memory & Swap Breakdown
         SectionCard {
           icon: ""
-          title: "Memory & Storage Cache"
+          title: "Memory & Swap"
 
           // RAM horizontal split progress
           Column {
@@ -598,10 +599,10 @@ KeyboardPanel {
           }
         }
 
-        // 5b. Top Processes by RAM (only while the panel is open)
+        // 5b. Top processes by RAM or CPU (sampled only while the panel is open)
         SectionCard {
           icon: ""
-          title: "Top processi"
+          title: "Top processes"
           spacing: Style.space(8)
           visible: root.showTopProcs
           opacity: hw.procTopFailed && hw.topProcs.length === 0 ? 0.7 : 1
@@ -620,7 +621,7 @@ KeyboardPanel {
               onClicked: root.persistSetting("topProcSort", "cpu")
             },
             ModeChip {
-              text: "Raggruppa"
+              text: "Group"
               selected: hw.topProcGroup
               anchors.verticalCenter: parent.verticalCenter
               onClicked: root.persistSetting("topProcGroup", !hw.topProcGroup)
@@ -632,7 +633,7 @@ KeyboardPanel {
             textFormat: Text.PlainText
             text: {
               var h = hw
-              var metric = h.topProcSort === "cpu" ? "per CPU" : "per RAM"
+              var metric = h.topProcSort === "cpu" ? "by CPU" : "by RAM"
               // Grouping found no systemd app identity and fell back to
               // process names: say so, the Group chip alone can't.
               if (h.topProcGroup && h.procGroupedBy === "comm") metric += " \u00b7 by name"
@@ -692,7 +693,7 @@ KeyboardPanel {
                     textFormat: Text.PlainText
                     width: Math.max(40, parent.width - procRank.implicitWidth - procFigs.implicitWidth - parent.spacing * 2)
                     elide: Text.ElideRight
-                    text: modelData.count > 1 ? (modelData.name + "  · " + modelData.count + " processi") : (modelData.name + "  (" + modelData.pid + ")")
+                    text: modelData.count > 1 ? (modelData.name + "  · " + modelData.count + " processes") : (modelData.name + "  (" + modelData.pid + ")")
                     color: root.baseColor
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.bodySmall
@@ -725,7 +726,7 @@ KeyboardPanel {
             visible: hw.topProcs.length === 0
             width: parent.width
             wrapMode: Text.Wrap
-            text: hw.procTopFailed ? "Dati processi non disponibili (python3 assente o lettura fallita)." : "Raccolta dati processi…"
+            text: hw.procTopFailed ? "Process data unavailable (python3 missing or read failed)." : "Collecting process data…"
             color: root.mutedColor
             font.family: root.fontFamily
             font.pixelSize: Style.font.caption

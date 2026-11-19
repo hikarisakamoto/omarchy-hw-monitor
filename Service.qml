@@ -96,9 +96,6 @@ Item {
   // Cumulative jiffies from the previous tick. CPU usage is the ratio between
   // two samples, so there is nothing to show until the second one lands.
   property var _prevJiffies: null
-  // The shortest window that counts as a CPU reading: ~250 ms of every
-  // thread's time (/proc/stat counts USER_HZ = 100 jiffies per CPU-second).
-  readonly property int _minCpuWindow: Math.max(1, cpuInfo.threads) * 25
 
   // CPU load history for the panel's sparkline: {t, v} points pushed by the
   // timed tick only (manual resamples would add irregular, short-window
@@ -162,7 +159,10 @@ Item {
     statFile.reload()
     var jiffies = Model.parseCpuJiffies(statFile.text())
     if (jiffies) {
-      var usage = Model.cpuUsage(_prevJiffies, jiffies, _minCpuWindow)
+      // The shortest window that counts as a reading: ~250 ms of every online
+      // CPU's time, counted from /proc/stat itself so it holds even when
+      // hw-probe never reported the CPU.
+      var usage = Model.cpuUsage(_prevJiffies, jiffies, Math.max(1, jiffies.cpus) * 25)
       if (usage >= 0) cpuPercent = usage
       // A window too short to read keeps its baseline, so the next sample
       // measures the whole span. A reading, a first sample, or a counter that

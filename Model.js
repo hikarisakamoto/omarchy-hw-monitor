@@ -195,6 +195,8 @@ function pickGpu(gpus, preference) {
 
 // The aggregate line of /proc/stat holds cumulative jiffies since boot:
 // cpu user nice system idle iowait irq softirq steal guest guest_nice
+// The per-CPU lines after it (cpu0, cpu1, ...) list only online CPUs, so their
+// count is how fast the total grows: USER_HZ = 100 jiffies per CPU-second.
 function parseCpuJiffies(raw) {
   var text = String(raw || "")
   var end = text.indexOf("\n")
@@ -208,7 +210,8 @@ function parseCpuJiffies(raw) {
   // iowait is time with nothing to run, so it belongs with idle rather than
   // being charged to a process — this matches what top and btop report.
   var idle = toNumber(parts[4]) + toNumber(parts[5])
-  return { total: total, idle: idle }
+  var perCpu = text.match(/^cpu\d+\s/gm)
+  return { total: total, idle: idle, cpus: perCpu ? perCpu.length : 0 }
 }
 
 // Usage is a ratio of jiffie deltas, not of wall-clock time, so an uneven

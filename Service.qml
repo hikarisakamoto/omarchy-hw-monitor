@@ -24,7 +24,9 @@ Item {
   property var settings: ({})
 
   // Set false on a screen this widget is not drawn on: the timers stop and the
-  // probe never runs, so a hidden instance costs nothing.
+  // probe never runs, so a hidden instance costs nothing. Its panel can still
+  // be opened (IPC, or the panel hotkey on that screen), and an open panel is
+  // sampled like any other: see the sampler Timer and refreshProcTop.
   property bool active: true
 
   // Resolved from this file's own location rather than spelled out, so a fork
@@ -228,7 +230,7 @@ Item {
   // (a clamped integer, a validated ram/cpu sort, a bare --group flag): the
   // raw setting string never touches argv. No PATH lookup, no shell.
   function refreshProcTop() {
-    if (_destroyed || !active || !procPanelOpen || !showTopProcs || procTopProcess.running) return
+    if (_destroyed || !procPanelOpen || !showTopProcs || procTopProcess.running) return
     var now = Date.now()
     if (_lastProcTopTry > 0 && now - _lastProcTopTry < 3000) return
     _lastProcTopTry = now
@@ -377,9 +379,10 @@ Item {
   // run its own 1 s sample() timer beside this one, and whenever the two
   // landed a few ms apart the CPU figure came from a near-empty window.)
   // Changing the interval restarts the timer, which at most delays one tick.
+  // It also runs for an open panel on an inactive (hidden) instance.
   Timer {
     interval: root.procPanelOpen ? 1000 : root.intervalSec * 1000
-    running: root.active
+    running: root.active || root.procPanelOpen
     repeat: true
     onTriggered: root.tick()
   }
@@ -417,9 +420,10 @@ Item {
   onActiveChanged: {
     if (active) {
       start()
-    } else {
+    } else if (!procPanelOpen) {
       cpuHistory = []
     }
   }
+  onProcPanelOpenChanged: if (!procPanelOpen && !active) cpuHistory = []
   Component.onCompleted: start()
 }

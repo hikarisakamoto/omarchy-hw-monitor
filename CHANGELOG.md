@@ -159,6 +159,10 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 - A helper that ignores SIGTERM while flooding output is now killed instead of
   running on.
 - Memory figures just under 10 GiB read "10" instead of "10.0".
+- A panel opened on a screen that `monitors` hides (through IPC, or the panel
+  hotkey with that screen focused) keeps updating: its readings and sparkline
+  no longer freeze after the first sample, and its top-processes list fills
+  instead of showing "Collecting process data…" forever.
 
 ## 1.2.1 — 2026-10-16
 

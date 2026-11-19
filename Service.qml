@@ -80,13 +80,6 @@ Item {
   readonly property bool topProcGroup: boolSetting("topProcGroup", true)
   readonly property string procTopPath: pluginDir + "/proc_top.py"
   property double _lastProcTopTry: 0
-  // Stale-length baselines for the byte guards: StdioCollector.text still
-  // holds the PREVIOUS run's output until this run's first byte arrives, so
-  // each guard compares against the length recorded at spawn — without a
-  // baseline a slow-first-byte run would be killed for the last run's size.
-  property int _probeBase: 0
-  property int _nvidiaBase: 0
-  property int _procTopBase: 0
   // Teardown veto: once destruction begins (the hot-reload window) no handler
   // touches state any more. See Component.onDestruction at the bottom.
   property bool _destroyed: false
@@ -130,10 +123,7 @@ Item {
   }
 
   function refreshProbe() {
-    probeProcess.command = [probePath]
-    _probeBase = String(probeOut.text).length
-    probeWatchdog.restart()
-    probeProcess.running = true
+    probeProcess.spawn([probePath])
   }
 
   function sample() {
@@ -201,13 +191,10 @@ Item {
     // hw-probe reports the absolute path it resolved, so the bar never
     // re-resolves nvidia-smi from the session PATH at sample time.
     var bin = gpuInfo && gpuInfo.nvidiaPath ? String(gpuInfo.nvidiaPath) : "nvidia-smi"
-    nvidiaProcess.command = [bin,
-                             "--query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,power.draw",
-                             "--format=csv,noheader,nounits",
-                             "--id=" + String(gpuInfo.index !== undefined ? gpuInfo.index : 0)]
-    _nvidiaBase = String(nvidiaProcess.stdout.text).length
-    nvidiaWatchdog.restart()
-    nvidiaProcess.running = true
+    nvidiaProcess.spawn([bin,
+                         "--query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,power.draw",
+                         "--format=csv,noheader,nounits",
+                         "--id=" + String(gpuInfo.index !== undefined ? gpuInfo.index : 0)])
   }
 
   function applyNvidia(raw) {
@@ -230,10 +217,7 @@ Item {
     _lastProcTopTry = now
     var cmd = ["/usr/bin/python3", procTopPath, "--top", String(topProcCount), "--sort", topProcSort]
     if (topProcGroup) cmd.push("--group")
-    procTopProcess.command = cmd
-    _procTopBase = String(procTopOut.text).length
-    procTopProcess.running = true
-    procTopWatchdog.restart()
+    procTopProcess.spawn(cmd)
   }
 
   // A sort or grouping change refreshes at once (throttle reset). The guards
@@ -253,265 +237,93 @@ Item {
   // previous tick's contents and every readout lags a full interval. These are
   // kernel-generated files of a few KB, so a blocking read never stalls the UI.
 
-  FileView { id: statFile; path: "/proc/stat"; blockAllReads: true; printErrors: false }
-  FileView { id: memFile; path: "/proc/meminfo"; blockAllReads: true; printErrors: false }
-  FileView { id: cpuinfoFile; path: "/proc/cpuinfo"; blockAllReads: true; printErrors: false }
-  FileView { id: loadFile; path: "/proc/loadavg"; blockAllReads: true; printErrors: false }
-
-  FileView {
-    id: cpuTempFile
-    path: root.cpuInfo && root.cpuInfo.tempPath ? String(root.cpuInfo.tempPath) : ""
+  component SensorFile: FileView {
     blockAllReads: true
     printErrors: false
   }
+
+  // A sensor's FileView path, or "" when the selected card does not expose it.
+  function gpuPath(key) {
+    return hasGpu && gpuInfo[key] ? String(gpuInfo[key]) : ""
+  }
+
+  SensorFile { id: statFile; path: "/proc/stat" }
+  SensorFile { id: memFile; path: "/proc/meminfo" }
+  SensorFile { id: cpuinfoFile; path: "/proc/cpuinfo" }
+  SensorFile { id: loadFile; path: "/proc/loadavg" }
+  SensorFile { id: cpuTempFile; path: root.cpuInfo && root.cpuInfo.tempPath ? String(root.cpuInfo.tempPath) : "" }
 
   // A GPU sensor the card does not expose leaves its path empty, and sample()
   // skips it — the widget then renders a dash rather than a fake zero.
-  FileView {
-    id: gpuBusyFile
-    path: root.hasGpu && root.gpuInfo.busyPath ? String(root.gpuInfo.busyPath) : ""
-    blockAllReads: true
-    printErrors: false
-  }
-  FileView {
-    id: gpuTempFile
-    path: root.hasGpu && root.gpuInfo.tempPath ? String(root.gpuInfo.tempPath) : ""
-    blockAllReads: true
-    printErrors: false
-  }
-  FileView {
-    id: gpuPowerFile
-    path: root.hasGpu && root.gpuInfo.powerPath ? String(root.gpuInfo.powerPath) : ""
-    blockAllReads: true
-    printErrors: false
-  }
-  FileView {
-    id: gpuFanFile
-    path: root.hasGpu && root.gpuInfo.fanPath ? String(root.gpuInfo.fanPath) : ""
-    blockAllReads: true
-    printErrors: false
-  }
-  FileView {
-    id: gpuClockFile
-    path: root.hasGpu && root.gpuInfo.clockPath ? String(root.gpuInfo.clockPath) : ""
-    blockAllReads: true
-    printErrors: false
-  }
-  FileView {
-    id: gpuVramUsedFile
-    path: root.hasGpu && root.gpuInfo.vramUsedPath ? String(root.gpuInfo.vramUsedPath) : ""
-    blockAllReads: true
-    printErrors: false
-  }
-  FileView {
-    id: gpuVramTotalFile
-    path: root.hasGpu && root.gpuInfo.vramTotalPath ? String(root.gpuInfo.vramTotalPath) : ""
-    blockAllReads: true
-    printErrors: false
-  }
+  SensorFile { id: gpuBusyFile; path: root.gpuPath("busyPath") }
+  SensorFile { id: gpuTempFile; path: root.gpuPath("tempPath") }
+  SensorFile { id: gpuPowerFile; path: root.gpuPath("powerPath") }
+  SensorFile { id: gpuFanFile; path: root.gpuPath("fanPath") }
+  SensorFile { id: gpuClockFile; path: root.gpuPath("clockPath") }
+  SensorFile { id: gpuVramUsedFile; path: root.gpuPath("vramUsedPath") }
+  SensorFile { id: gpuVramTotalFile; path: root.gpuPath("vramTotalPath") }
 
   // ------------------------------------------------------------- processes
+  //
+  // Each helper runs inside a GuardedProcess, which owns its watchdog
+  // (SIGTERM), kill timer (SIGKILL) and byte cap. The values below are the
+  // only per-helper differences.
 
-  // Byte caps: StdioCollector never emits the parser's read signal, so the
-  // cap is enforced by polling the collected text length from a short repeat
-  // Timer (verified on Quickshell 0.3.1: a 64 MB spewer is stopped within one
-  // polling interval). Untampered output is one JSON line of at most a few
-  // KB, so a cap crossing always means a runaway or tampered helper.
-  Process {
+  GuardedProcess {
     id: probeProcess
-    stdout: StdioCollector {
-      id: probeOut
-      waitForEnd: false
-      onStreamFinished: {
-        if (root._destroyed) return
-        root.probe = Model.parseProbe(text)
-        // Sensor paths only become known here, so take the first real sample
-        // once they land instead of waiting out a whole interval.
-        root.sample()
-      }
-    }
-    stderr: StdioCollector { waitForEnd: false }
-    onExited: {
+    timeoutMs: 8000
+    killMs: 2000
+    byteCap: Model.HELPER_MAX_CHARS
+    onFinished: function(text) {
       if (root._destroyed) return
-      probeWatchdog.stop()
-      probeKillTimer.stop()
-      // A killed or crashed probe leaves discovery empty for the whole
-      // session otherwise: retry slowly until one run succeeds.
-      if (!root.probe.ok) probeRetryTimer.restart()
+      root.probe = Model.parseProbe(text)
+      // Sensor paths only become known here, so take the first real sample
+      // once they land instead of waiting out a whole interval.
+      root.sample()
     }
+    // A killed or crashed probe leaves discovery empty for the whole session
+    // otherwise: retry slowly until one run succeeds.
+    onExited: if (!root._destroyed && !root.probe.ok) probeRetryTimer.restart()
   }
 
-  Process {
+  GuardedProcess {
     id: nvidiaProcess
-    stdout: StdioCollector {
-      waitForEnd: false
-      onStreamFinished: { if (!root._destroyed) root.applyNvidia(text) }
-    }
-    stderr: StdioCollector { waitForEnd: false }
-    onExited: {
-      if (root._destroyed) return
-      nvidiaWatchdog.stop()
-      nvidiaKillTimer.stop()
-    }
+    timeoutMs: 10000
+    killMs: 2000
+    byteCap: Model.HELPER_MAX_CHARS
+    onFinished: function(text) { if (!root._destroyed) root.applyNvidia(text) }
   }
 
   // Top-processes worker: run directly (never sh -c), stdout capped at one
   // JSON line under 16 KB and validated by Model.parseProcTop. It fails soft:
   // the last good list stays and procTopFailed is raised instead of emptying
-  // the section.
-  Process {
+  // the section. Watchdog kill-before-next-tick: 0.4 s internal read << 2 s
+  // watchdog << 3 s throttle.
+  GuardedProcess {
     id: procTopProcess
-    stdout: StdioCollector {
-      id: procTopOut
-      waitForEnd: false
-      onStreamFinished: {
-        if (root._destroyed) return
-        // parseProcTop degrades fail-soft on every shape it documents, but an
-        // exotic value type can still throw: catch it so the section flags a
-        // failure instead of freezing silently. The watchdog is stopped in
-        // onExited, not here — a helper that closes stdout and then hangs
-        // must still be killed.
-        var res = null
-        try { res = Model.parseProcTop(text, root.topProcCount) } catch (e) { res = null }
-        if (res && res.ok) {
-          root.topProcs = res.rows
-          root.procGroupedBy = res.groupedBy
-          root.procTopFailed = false
-          // A fixed pattern, so the digits stay ASCII whatever the locale.
-          root.procTopTime = Qt.formatTime(new Date(), "HH:mm:ss")
-        } else {
-          root.procTopFailed = true
-        }
+    timeoutMs: 2000
+    killMs: 1000
+    byteCap: Model.PROC_TOP_MAX_CHARS
+    onFinished: function(text) {
+      if (root._destroyed) return
+      // parseProcTop degrades fail-soft on every shape it documents, but an
+      // exotic value type can still throw: catch it so the section flags a
+      // failure instead of freezing silently. The watchdog keeps running until
+      // the process exits — a helper that closes stdout and then hangs must
+      // still be killed.
+      var res = null
+      try { res = Model.parseProcTop(text, root.topProcCount) } catch (e) { res = null }
+      if (res && res.ok) {
+        root.topProcs = res.rows
+        root.procGroupedBy = res.groupedBy
+        root.procTopFailed = false
+        // A fixed pattern, so the digits stay ASCII whatever the locale.
+        root.procTopTime = Qt.formatTime(new Date(), "HH:mm:ss")
+      } else {
+        root.procTopFailed = true
       }
     }
-    stderr: StdioCollector { waitForEnd: false }
-    onExited: {
-      if (root._destroyed) return
-      procTopWatchdog.stop()
-      procTopKillTimer.stop()
-    }
-  }
-
-  // Watchdog kill-before-next-tick: 0.4 s internal read << 2 s watchdog << 3 s
-  // throttle. The first trigger sends SIGTERM via running=false; the kill
-  // timer escalates to SIGKILL for a helper that ignores it. Both stay armed
-  // until onExited — a helper that finishes its output and then hangs must
-  // still be killed. nvidia and probe get the same two-stage treatment: a
-  // wedged nvidia-smi or a hung hw-probe used to latch running=true forever.
-  Timer {
-    id: procTopWatchdog
-    interval: 2000
-    repeat: false
-    onTriggered: {
-      if (root._destroyed) return
-      if (procTopProcess.running) procTopProcess.running = false
-      procTopKillTimer.restart()
-      root.procTopFailed = true
-    }
-  }
-
-  Timer {
-    id: procTopKillTimer
-    interval: 1000
-    repeat: false
-    onTriggered: {
-      if (root._destroyed) return
-      if (procTopProcess.running) procTopProcess.signal(9)
-    }
-  }
-
-  Timer {
-    id: nvidiaWatchdog
-    interval: 10000
-    repeat: false
-    onTriggered: {
-      if (root._destroyed) return
-      if (nvidiaProcess.running) nvidiaProcess.running = false
-      nvidiaKillTimer.restart()
-    }
-  }
-
-  Timer {
-    id: nvidiaKillTimer
-    interval: 2000
-    repeat: false
-    onTriggered: {
-      if (root._destroyed) return
-      if (nvidiaProcess.running) nvidiaProcess.signal(9)
-    }
-  }
-
-  Timer {
-    id: probeWatchdog
-    interval: 8000
-    repeat: false
-    onTriggered: {
-      if (root._destroyed) return
-      if (probeProcess.running) probeProcess.running = false
-      probeKillTimer.restart()
-    }
-  }
-
-  Timer {
-    id: probeKillTimer
-    interval: 2000
-    repeat: false
-    onTriggered: {
-      if (root._destroyed) return
-      if (probeProcess.running) probeProcess.signal(9)
-    }
-  }
-
-  // Byte-cap guards, one per helper: poll the collected text length while
-  // the process runs and stop it past the cap, escalating through the same
-  // kill timers the watchdogs use. Two rules keep the check honest: the
-  // baseline recorded at spawn separates the previous run's stale text from
-  // this run's bytes (text is only reset once THIS run writes its first
-  // byte), and stderr counts toward the cap too. The running binding stops
-  // the guard when the process ends, so a guard never outlives its run.
-  Timer {
-    id: procTopByteGuard
-    interval: 100
-    repeat: true
-    running: procTopProcess.running
-    onTriggered: {
-      var len = String(procTopOut.text).length
-      var err = String(procTopProcess.stderr.text).length
-      if ((len !== root._procTopBase && len > Model.PROC_TOP_MAX_CHARS) || err > Model.PROC_TOP_MAX_CHARS) {
-        procTopProcess.running = false
-        procTopKillTimer.restart()
-      }
-    }
-  }
-
-  Timer {
-    id: probeByteGuard
-    interval: 100
-    repeat: true
-    running: probeProcess.running
-    onTriggered: {
-      var len = String(probeOut.text).length
-      var err = String(probeProcess.stderr.text).length
-      if ((len !== root._probeBase && len > Model.HELPER_MAX_CHARS) || err > Model.HELPER_MAX_CHARS) {
-        probeProcess.running = false
-        probeKillTimer.restart()
-      }
-    }
-  }
-
-  Timer {
-    id: nvidiaByteGuard
-    interval: 100
-    repeat: true
-    running: nvidiaProcess.running
-    onTriggered: {
-      var len = String(nvidiaProcess.stdout.text).length
-      var err = String(nvidiaProcess.stderr.text).length
-      if ((len !== root._nvidiaBase && len > Model.HELPER_MAX_CHARS) || err > Model.HELPER_MAX_CHARS) {
-        nvidiaProcess.running = false
-        nvidiaKillTimer.restart()
-      }
-    }
+    onTimedOut: if (!root._destroyed) root.procTopFailed = true
   }
 
   // Slow retry for discovery: armed only when a probe run ended without
@@ -532,16 +344,10 @@ Item {
   // in-flight callback touches state while the object is finalised (reload).
   Component.onDestruction: {
     _destroyed = true
-    procTopWatchdog.stop()
-    procTopKillTimer.stop()
-    nvidiaWatchdog.stop()
-    nvidiaKillTimer.stop()
-    probeWatchdog.stop()
-    probeKillTimer.stop()
     probeRetryTimer.stop()
-    if (procTopProcess.running) procTopProcess.running = false
-    if (nvidiaProcess.running) nvidiaProcess.running = false
-    if (probeProcess.running) probeProcess.running = false
+    probeProcess.shutdown()
+    nvidiaProcess.shutdown()
+    procTopProcess.shutdown()
   }
 
   // -------------------------------------------------------------- lifetime

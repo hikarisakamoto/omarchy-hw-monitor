@@ -136,8 +136,7 @@ have_lspci=0
 [[ -n $lspci_bin ]] && have_lspci=1
 
 gpu_name_for() {
-  local dev=$1 driver=$2 slot line name
-  slot=$(sed -n 's/^PCI_SLOT_NAME=//p' "$dev/uevent" 2>/dev/null | head -1)
+  local slot=$1 driver=$2 line name
   if ((have_lspci)) && [[ -n $slot ]]; then
     line=$("$lspci_bin" -s "$slot" 2>/dev/null | head -1)
     # "0d:00.0 VGA compatible controller: AMD/ATI Navi 48 [Radeon RX 9070 XT]"
@@ -175,7 +174,15 @@ for card in /sys/class/drm/card[0-9]*; do
   dev=$card/device
   [[ -d $dev ]] || continue
 
-  driver=$(sed -n 's/^DRIVER=//p' "$dev/uevent" 2>/dev/null | head -1)
+  # uevent holds one KEY=VALUE per line; take the driver and PCI address in a
+  # single pass. stderr is redirected first so a missing file stays silent.
+  driver="" slot=""
+  while IFS= read -r kv; do
+    case $kv in
+      DRIVER=*) driver=${kv#DRIVER=} ;;
+      PCI_SLOT_NAME=*) slot=${kv#PCI_SLOT_NAME=} ;;
+    esac
+  done 2>/dev/null <"$dev/uevent"
 
   # A headless Intel card is a render-offload dGPU that powers itself down
   # when idle. Its hwmon reads wake it and restart the autosuspend timer, so
@@ -192,7 +199,7 @@ for card in /sys/class/drm/card[0-9]*; do
 
   entry="{"
   entry+="$(printf '%s: %s, ' "$(json_str kind)" "$(json_str "${driver:-drm}")")"
-  entry+="$(printf '%s: %s, ' "$(json_str name)" "$(json_str "$(gpu_name_for "$dev" "$driver")")")"
+  entry+="$(printf '%s: %s, ' "$(json_str name)" "$(json_str "$(gpu_name_for "$slot" "$driver")")")"
   entry+="$(printf '%s: %s, ' "$(json_str card)" "$(json_str "${card##*/}")")"
   entry+="$(field_path busyPath "$dev/gpu_busy_percent")"
   entry+="$(field_path vramUsedPath "$dev/mem_info_vram_used")"

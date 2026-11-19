@@ -103,8 +103,10 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   figure now matches its `VmRSS`.
 - On hosts with more than 4096 processes the newest ones are no longer
   silently left out of the top-processes list (the scan bound is now 16384).
-- Non-ASCII app names from systemd units show one placeholder dot per
-  character instead of one per byte.
+- Process and app names with accented or non-Latin letters (café, Cyrillic,
+  CJK) show as written in the top-processes list; other unusual characters
+  (symbols, emoji, combining marks, control and direction characters) still
+  show one placeholder dot each.
 - Apps started through `gtk-launch` (Spotify, for example) or
   `xdg-terminal-exec` (every Omarchy terminal and TUI) get their own
   top-processes rows instead of sharing one row named after the launcher.

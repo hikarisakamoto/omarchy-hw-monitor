@@ -24,6 +24,7 @@ import os
 import re
 import sys
 import time
+import unicodedata
 
 # Row-count bounds; the same 3..12 range is in manifest.json (topProcCount),
 # Service.qml topProcCount and Model.js PROC_TOP_MAX.
@@ -116,7 +117,12 @@ def app_identity(cgline: str) -> str:
             return pretty
     return ""
 
-# Spaces and parens are legitimate in real names (e.g. "Isolated Web Co").
+# Kept in a name: this ASCII allow-list (spaces and parens are legitimate in
+# real names, e.g. "Isolated Web Co") plus BMP letters and digits, after NFC
+# normalisation. Everything else (controls, bidi and zero-width format
+# characters, combining marks, symbols, emoji, astral code points) becomes a
+# placeholder dot. BMP only because Model.js cuts names at 48 UTF-16 units,
+# which could split an astral character into a lone surrogate.
 NAME_OK = set(
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     "._+:@/ -()")
@@ -124,7 +130,9 @@ NAME_OK = set(
 
 def sanitize_name(raw: object) -> str:
     text = str(raw or "").strip().replace("\n", " ").replace("\t", " ")
-    out = "".join(c if c in NAME_OK else "\u00b7" for c in text)
+    text = unicodedata.normalize("NFC", text)
+    out = "".join(c if c in NAME_OK or (c.isalnum() and ord(c) < 0x10000)
+                  else "\u00b7" for c in text)
     out = " ".join(out.split())
     if len(out) > NAME_MAX:
         out = out[:NAME_MAX]

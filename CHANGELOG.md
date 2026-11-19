@@ -17,6 +17,10 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   against the schema, syntax of every helper and QML file), and
   `scripts/release.sh` with this changelog.
 - README: a Development section on trying a checkout in your own bar.
+- The top-processes header says "by name" when grouping found no systemd app
+  identity and fell back to process names.
+- `proc_top.py --help`. Unknown or malformed arguments are now rejected with a
+  usage message instead of silently ignored.
 
 ### Changed
 
@@ -25,6 +29,10 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   how `gpu: "auto"` picks a card and what an unmatched value does, `monitors`
   and `itemsOrder` as comma-separated strings, top processes by RAM or CPU,
   and rows for `padOpacity` and the four glyph rotation settings.
+- The top-processes helper does about half the CPU work per refresh: one
+  `/proc` read per process in the first sample, and linear-time grouping.
+- `proc_top.py` exits 1 on a failure and 2 on a bad argument instead of 0; it
+  still prints `{}`, so the panel behaves as before.
 
 ### Fixed
 
@@ -35,6 +43,17 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   skipped.
 - Until the probe answers, the CPU has no placeholder "CPU" model name, so the
   panel header and `status` show their unknown-CPU fallbacks instead.
+- Grouped top processes no longer fold systemd services (journald, logind,
+  oomd...) into pid 1's "systemd" row under a borrowed name such as
+  "systemd-oomd · 12"; a merged group is named after its own app.
+- A grouped row's RAM counts shared libraries and shared memory once instead of
+  once per process, so multi-process apps no longer read up to twice their
+  real footprint or outrank bigger single-process apps. A single process's
+  figure now matches its `VmRSS`.
+- On hosts with more than 4096 processes the newest ones are no longer
+  silently left out of the top-processes list (the scan bound is now 16384).
+- Non-ASCII app names from systemd units show one placeholder dot per
+  character instead of one per byte.
 
 ## 1.2.1 — 2026-10-16
 

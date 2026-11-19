@@ -359,7 +359,7 @@ function formatRpm(rpm) {
 // Always returns {rows, groupedBy} (no rows on any unexpected shape); keeps at
 // most maxN rows, cuts names to 48 chars and clamps numbers to their ranges.
 // The collector's order (by the chosen metric) is preserved.
-var PROC_TOP_MAX = 12
+var PROC_TOP_MAX = 12 // proc_top.py TOP_MAX
 var PROC_NAME_MAX = 48
 var PROC_COUNT_MAX = 16384 // proc_top.py PID_CAP: no group can hold more
 var PROC_GROUPEDS = ["none", "scope", "comm"]

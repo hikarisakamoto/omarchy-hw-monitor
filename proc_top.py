@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 """Top-N processes by resident memory or CPU, optionally grouped per application.
 
-Usage: proc_top.py [--top N] [--sort ram|cpu] [--group]
+Usage: proc_top.py [--top N] [--sort ram|cpu] [--group]   (--help for details)
 Output: {"groupedBy": "none"|"scope"|"comm", "procs": [{"pid": 1234,
   "name": "firefox", "count": 12, "cpu": 12.3, "rssKib": 1234567,
   "memPct": 5.3}]}
@@ -13,16 +13,20 @@ Grouping: systemd identity from the deepest token (scope/service; containers
 such as app-graphical.slice skipped; cleaned-up pretty name); fallback to an
 equal comm; sep-prefix merge ("orca" absorbs "orca-ide"). Without an
 identity: single processes or per-comm. No child expansion.
-Errors: {} on stdout, one line on stderr, exit 0 (refuse-softly).
+Errors: {} on stdout and the reason on stderr (refuse-softly); exit status 2
+for a bad argument, 1 for any other failure.
 Stdlib only, no network, no writes.
 """
 
+import argparse
 import json
 import os
 import re
 import sys
 import time
 
+# Row-count bounds; the same 3..12 range is in manifest.json (topProcCount),
+# Service.qml topProcCount and Model.js PROC_TOP_MAX.
 TOP_DEFAULT = 6
 TOP_MIN = 3
 TOP_MAX = 12
@@ -300,28 +304,25 @@ def build_rows(procs: list[dict], mem_total: int,
              for name, members in group_by_app(procs)], grouped_by)
 
 
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        prog="proc_top.py", allow_abbrev=False,
+        description="Print the top processes by RAM or CPU as one JSON line.")
+    parser.add_argument(
+        "--top", type=int, default=TOP_DEFAULT, metavar="N",
+        help="rows to print, clamped to %d..%d (default %d)"
+        % (TOP_MIN, TOP_MAX, TOP_DEFAULT))
+    parser.add_argument("--sort", type=str.lower, choices=SORTS,
+                        default="ram", help="ranking metric (default ram)")
+    parser.add_argument("--group", action="store_true",
+                        help="collapse processes per application")
+    args = parser.parse_args(argv)
+    args.top = max(TOP_MIN, min(TOP_MAX, args.top))
+    return args
+
+
 def main(argv: list[str]) -> None:
-    top_n = TOP_DEFAULT
-    sort = "ram"
-    group = False
-    i = 1
-    while i < len(argv):
-        if argv[i] == "--top" and i + 1 < len(argv):
-            try:
-                top_n = int(argv[i + 1])
-            except ValueError:
-                top_n = TOP_DEFAULT
-            i += 2
-        elif argv[i] == "--sort" and i + 1 < len(argv):
-            cand = argv[i + 1].strip().lower()
-            sort = cand if cand in SORTS else "ram"
-            i += 2
-        elif argv[i] == "--group":
-            group = True
-            i += 1
-        else:
-            i += 1
-    top_n = max(TOP_MIN, min(TOP_MAX, top_n))
+    args = parse_args(argv)
 
     try:
         page_kib = os.sysconf("SC_PAGE_SIZE") // 1024
@@ -333,21 +334,30 @@ def main(argv: list[str]) -> None:
     ticks_a = cpu_ticks()
     time.sleep(SNAP_GAP_S)
     sys_b = read_sys_total()
-    procs = sample_procs(ticks_a, sys_b - sys_a, page_kib, group)
+    procs = sample_procs(ticks_a, sys_b - sys_a, page_kib, args.group)
 
-    rows, grouped_by = build_rows(procs, mem_total, group)
-    key = (lambda r: r["rssKib"]) if sort == "ram" else (lambda r: r["cpu"])
+    rows, grouped_by = build_rows(procs, mem_total, args.group)
+    key = (lambda r: r["rssKib"]) if args.sort == "ram" else (lambda r: r["cpu"])
     rows.sort(key=key, reverse=True)
     sys.stdout.write(json.dumps({"groupedBy": grouped_by,
-                                 "procs": rows[:top_n]},
+                                 "procs": rows[:args.top]},
                                 ensure_ascii=True) + "\n")
 
 
 if __name__ == "__main__":
     try:
-        main(sys.argv)
+        main(sys.argv[1:])
     except BrokenPipeError:
         pass
+    except SystemExit as exc:
+        # argparse rejected an argument (code 2, usage already on stderr).
+        # Still print {}: with no stdout bytes Service.qml's collector would
+        # re-read the previous run's text as fresh. --help exits 0 and must
+        # not get JSON after its text.
+        if exc.code:
+            sys.stdout.write("{}\n")
+        raise
     except Exception as exc:  # refuse-softly: never a noisy traceback
         sys.stderr.write("proc_top: %s\n" % exc)
         sys.stdout.write("{}\n")
+        sys.exit(1)

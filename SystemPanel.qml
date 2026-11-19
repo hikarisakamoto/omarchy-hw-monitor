@@ -217,11 +217,11 @@ KeyboardPanel {
           // Gear Icon for In-Panel Settings
           ModeChip {
             id: settingsButton
-            label: "\uF013"
+            text: "\uF013"
             selected: root.settingsOpen
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            onPicked: root.settingsOpen = !root.settingsOpen
+            onClicked: root.settingsOpen = !root.settingsOpen
           }
         }
 
@@ -277,218 +277,78 @@ KeyboardPanel {
               }
             }
 
-            // Readout Mode
-            Row {
-              width: parent.width
-              spacing: Style.space(8)
+            ChoiceRow {
+              label: "Mode"
+              key: "mode"
+              current: root.mode
+              options: [
+                { value: "icons", label: "Icons" },
+                { value: "compact", label: "Compact" },
+                { value: "full", label: "Full" },
+                { value: "labels", label: "Labels" }
+              ]
+            }
 
-              Text {
-                width: Style.space(48)
-                anchors.verticalCenter: parent.verticalCenter
-                text: "Mode"
-                color: root.mutedColor
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
-                font.bold: true
-              }
+            // Each chip toggles one of the bar's shown-item settings.
+            SettingRow {
+              label: "Show"
 
-              Flow {
-                width: parent.width - Style.space(56)
-                spacing: Style.space(4)
-
-                ModeChip {
-                  label: "Icons"
-                  selected: root.mode === "icons"
-                  onPicked: root.persistSetting("mode", "icons")
-                }
-                ModeChip {
-                  label: "Compact"
-                  selected: root.mode === "compact"
-                  onPicked: root.persistSetting("mode", "compact")
-                }
-                ModeChip {
-                  label: "Full"
-                  selected: root.mode === "full"
-                  onPicked: root.persistSetting("mode", "full")
-                }
-                ModeChip {
-                  label: "Labels"
-                  selected: root.mode === "labels"
-                  onPicked: root.persistSetting("mode", "labels")
+              Repeater {
+                model: [
+                  { key: "showGpu", label: "󰾲 GPU" },
+                  { key: "showCpu", label: " CPU" },
+                  { key: "showCpuTemp", label: " CPU Temp" },
+                  { key: "showGpuTemp", label: "󰔏 GPU Temp" },
+                  { key: "showRam", label: " RAM" },
+                  { key: "showClocks", label: "󰓅 Clocks" },
+                  { key: "showGauges", label: "󰁹 Gauges" }
+                ]
+                delegate: ModeChip {
+                  required property var modelData
+                  text: modelData.label
+                  selected: root[modelData.key]
+                  onClicked: root.persistSetting(modelData.key, !root[modelData.key])
                 }
               }
             }
 
-            // Show Components
-            Row {
-              width: parent.width
-              spacing: Style.space(8)
-
-              Text {
-                width: Style.space(48)
-                anchors.verticalCenter: parent.verticalCenter
-                text: "Show"
-                color: root.mutedColor
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
-                font.bold: true
-              }
-
-              Flow {
-                width: parent.width - Style.space(56)
-                spacing: Style.space(4)
-
-                ModeChip {
-                  label: "󰾲 GPU"
-                  selected: root.showGpu
-                  onPicked: root.persistSetting("showGpu", !root.showGpu)
-                }
-                ModeChip {
-                  label: " CPU"
-                  selected: root.showCpu
-                  onPicked: root.persistSetting("showCpu", !root.showCpu)
-                }
-                ModeChip {
-                  label: " CPU Temp"
-                  selected: root.showCpuTemp
-                  onPicked: root.persistSetting("showCpuTemp", !root.showCpuTemp)
-                }
-                ModeChip {
-                  label: "󰔏 GPU Temp"
-                  selected: root.showGpuTemp
-                  onPicked: root.persistSetting("showGpuTemp", !root.showGpuTemp)
-                }
-                ModeChip {
-                  label: " RAM"
-                  selected: root.showRam
-                  onPicked: root.persistSetting("showRam", !root.showRam)
-                }
-                ModeChip {
-                  label: "󰓅 Clocks"
-                  selected: root.showClocks
-                  onPicked: root.persistSetting("showClocks", !root.showClocks)
-                }
-                ModeChip {
-                  label: "󰁹 Gauges"
-                  selected: root.showGauges
-                  onPicked: root.persistSetting("showGauges", !root.showGauges)
-                }
-              }
+            ChoiceRow {
+              label: "RAM"
+              key: "ramFormat"
+              // "available" is an alias of "free": both show MemAvailable.
+              current: root.ramFormat === "available" ? "free" : root.ramFormat
+              options: [
+                { value: "used/total", label: "Used/Total" },
+                { value: "used", label: "Used" },
+                { value: "percent", label: "Percent" },
+                { value: "free", label: "Free" }
+              ]
             }
 
-            // RAM Format
-            Row {
-              width: parent.width
-              spacing: Style.space(8)
-
-              Text {
-                width: Style.space(48)
-                anchors.verticalCenter: parent.verticalCenter
-                text: "RAM"
-                color: root.mutedColor
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
-                font.bold: true
-              }
-
-              Flow {
-                width: parent.width - Style.space(56)
-                spacing: Style.space(4)
-
-                ModeChip {
-                  label: "Used/Total"
-                  selected: root.ramFormat === "used/total"
-                  onPicked: root.persistSetting("ramFormat", "used/total")
-                }
-                ModeChip {
-                  label: "Used"
-                  selected: root.ramFormat === "used"
-                  onPicked: root.persistSetting("ramFormat", "used")
-                }
-                ModeChip {
-                  label: "Percent"
-                  selected: root.ramFormat === "percent"
-                  onPicked: root.persistSetting("ramFormat", "percent")
-                }
-                ModeChip {
-                  label: "Free"
-                  selected: root.ramFormat === "free"
-                  onPicked: root.persistSetting("ramFormat", "free")
-                }
-              }
+            ChoiceRow {
+              label: "Unit"
+              key: "fahrenheit"
+              current: root.fahrenheit
+              options: [
+                { value: false, label: "°C  Celsius" },
+                { value: true, label: "°F  Fahrenheit" }
+              ]
             }
 
-            // Temperature Unit
-            Row {
-              width: parent.width
-              spacing: Style.space(8)
-
-              Text {
-                width: Style.space(48)
-                anchors.verticalCenter: parent.verticalCenter
-                text: "Unit"
-                color: root.mutedColor
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
-                font.bold: true
-              }
-
-              Flow {
-                width: parent.width - Style.space(56)
-                spacing: Style.space(4)
-
-                ModeChip {
-                  label: "°C  Celsius"
-                  selected: !root.fahrenheit
-                  onPicked: root.persistSetting("fahrenheit", false)
-                }
-                ModeChip {
-                  label: "°F  Fahrenheit"
-                  selected: root.fahrenheit
-                  onPicked: root.persistSetting("fahrenheit", true)
-                }
-              }
-            }
-
-            // Temp Format
-            Row {
-              width: parent.width
-              spacing: Style.space(8)
-
-              Text {
-                width: Style.space(48)
-                anchors.verticalCenter: parent.verticalCenter
-                text: "Temp"
-                color: root.mutedColor
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.caption
-                font.bold: true
-              }
-
-              Flow {
-                width: parent.width - Style.space(56)
-                spacing: Style.space(4)
-
-                ModeChip {
-                  label: root.fahrenheit ? "45°F" : "45°C"
-                  selected: root.tempFormat === "degree-unit"
-                  onPicked: root.persistSetting("tempFormat", "degree-unit")
-                }
-                ModeChip {
-                  label: "45°"
-                  selected: root.tempFormat === "degree"
-                  onPicked: root.persistSetting("tempFormat", "degree")
-                }
-                ModeChip {
-                  label: root.fahrenheit ? "45F" : "45C"
-                  selected: root.tempFormat === "unit"
-                  onPicked: root.persistSetting("tempFormat", "unit")
-                }
-                ModeChip {
-                  label: "45"
-                  selected: root.tempFormat === "bare"
-                  onPicked: root.persistSetting("tempFormat", "bare")
-                }
+            ChoiceRow {
+              label: "Temp"
+              key: "tempFormat"
+              current: root.tempFormat
+              // Each label previews its format in the current unit.
+              options: {
+                var unit = root.fahrenheit ? "F" : "C"
+                return [
+                  { value: "degree-unit", label: "45°" + unit },
+                  { value: "degree", label: "45°" },
+                  { value: "unit", label: "45" + unit },
+                  { value: "unit-lower", label: "45" + unit.toLowerCase() },
+                  { value: "bare", label: "45" }
+                ]
               }
             }
           }
@@ -735,22 +595,22 @@ KeyboardPanel {
 
           headerItems: [
             ModeChip {
-              label: "RAM"
+              text: "RAM"
               selected: hw.topProcSort === "ram"
               anchors.verticalCenter: parent.verticalCenter
-              onPicked: root.persistSetting("topProcSort", "ram")
+              onClicked: root.persistSetting("topProcSort", "ram")
             },
             ModeChip {
-              label: "CPU"
+              text: "CPU"
               selected: hw.topProcSort === "cpu"
               anchors.verticalCenter: parent.verticalCenter
-              onPicked: root.persistSetting("topProcSort", "cpu")
+              onClicked: root.persistSetting("topProcSort", "cpu")
             },
             ModeChip {
-              label: "Raggruppa"
+              text: "Raggruppa"
               selected: hw.topProcGroup
               anchors.verticalCenter: parent.verticalCenter
-              onPicked: root.persistSetting("topProcGroup", !hw.topProcGroup)
+              onClicked: root.persistSetting("topProcGroup", !hw.topProcGroup)
             }
           ]
 
@@ -916,44 +776,62 @@ KeyboardPanel {
     }
   }
 
-  // Interactive settings chip
-  component ModeChip: Rectangle {
-    id: chip
+  // A drawer or header chip. The shell's own Button draws it, so the selected
+  // state uses the theme's control tokens and stays legible on every theme;
+  // caption text and tight padding keep the drawer compact.
+  component ModeChip: Button {
+    bordered: true
+    foreground: root.baseColor
+    fontFamily: root.fontFamily
+    fontSize: Style.font.caption
+    horizontalPadding: Style.space(6)
+    verticalPadding: Style.space(4)
+  }
+
+  // A labelled row of drawer chips that wraps when the panel is narrow.
+  component SettingRow: Row {
+    id: settingRow
     property string label: ""
-    property bool selected: false
-    property color activeColor: Color.accent
-    signal picked()
+    default property alias chips: chipFlow.data
 
-    implicitWidth: chipLabel.implicitWidth + Style.space(12)
-    implicitHeight: chipLabel.implicitHeight + Style.space(8)
-    radius: Style.cornerRadius
-    color: chip.selected ? activeColor : (chipMouse.containsMouse ? Qt.alpha(root.baseColor, 0.12) : Qt.alpha(root.baseColor, 0.06))
-    border.color: chip.selected ? activeColor : Qt.alpha(root.baseColor, 0.12)
-    border.width: 1
-
-    Behavior on color { ColorAnimation { duration: 140 } }
-    Behavior on border.color { ColorAnimation { duration: 140 } }
-
-    scale: chipMouse.pressed ? 0.95 : 1
-    Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+    width: parent.width
+    spacing: Style.space(8)
 
     Text {
-      id: chipLabel
+      id: settingLabel
+      width: Style.space(48)
+      anchors.verticalCenter: parent.verticalCenter
       textFormat: Text.PlainText
-      anchors.centerIn: parent
-      text: chip.label
-      color: chip.selected ? Qt.darker(chip.activeColor, 2.4) : root.baseColor
+      text: settingRow.label
+      color: root.mutedColor
       font.family: root.fontFamily
       font.pixelSize: Style.font.caption
-      font.bold: chip.selected
+      font.bold: true
     }
 
-    MouseArea {
-      id: chipMouse
-      anchors.fill: parent
-      hoverEnabled: true
-      cursorShape: Qt.PointingHandCursor
-      onClicked: chip.picked()
+    Flow {
+      id: chipFlow
+      width: parent.width - settingLabel.width - parent.spacing
+      spacing: Style.space(4)
+    }
+  }
+
+  // A setting that takes one of `options` ([{ value, label }]): the chip whose
+  // value equals `current` is selected, and picking a chip persists its value.
+  component ChoiceRow: SettingRow {
+    id: choiceRow
+    property string key: ""
+    property var options: []
+    property var current
+
+    Repeater {
+      model: choiceRow.options
+      delegate: ModeChip {
+        required property var modelData
+        text: modelData.label
+        selected: choiceRow.current === modelData.value
+        onClicked: root.persistSetting(choiceRow.key, modelData.value)
+      }
     }
   }
 

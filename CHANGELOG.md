@@ -24,6 +24,9 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 - `gpuTempIconRotation`, so the GPU temperature glyph turns on its own;
   `gpuIconRotation` now rotates only the GPU glyph.
 - A `unit-lower` chip (`45c`/`45f`) in the panel's temperature-format row.
+- The panel's settings drawer works from the keyboard: with it open, the arrow
+  keys or `h`/`j`/`k`/`l` move a cursor between its chips (entering a row on
+  its current choice) and `Enter` or `Space` picks the chip under it.
 
 ### Changed
 

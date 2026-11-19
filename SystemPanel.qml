@@ -122,6 +122,74 @@ KeyboardPanel {
     }
   }
 
+  // Keyboard cursor over the settings drawer, the shell's single-cursor model
+  // (Ui dev-gallery, audio panel). With the drawer open, j/k or Up/Down pick a
+  // row and land on its selected chip, h/l or Left/Right move along the row,
+  // and Enter/Space press the chip. The first move only reveals the cursor;
+  // hovering a chip moves it there, so one chip is highlighted at a time. The
+  // highlight is the shell Button's own hasCursor state.
+  property bool drawerCursorActive: false
+  property int drawerRow: 0
+  property int drawerCol: 0
+  readonly property var drawerRows: [modeRow, showRow, ramRow, unitRow, tempRow]
+
+  onSettingsOpenChanged: if (!settingsOpen) drawerCursorActive = false
+
+  function drawerCursorOn(row, col) {
+    return drawerCursorActive && drawerRow === row && drawerCol === col
+  }
+
+  function setDrawerCursor(row, col) {
+    drawerCursorActive = true
+    drawerRow = row
+    drawerCol = col
+  }
+
+  function drawerChip() {
+    var row = drawerRows[drawerRow]
+    return row && row.chipRepeater ? row.chipRepeater.itemAt(drawerCol) : null
+  }
+
+  function enterDrawerRow(index) {
+    var row = drawerRows[index]
+    var count = row.chipRepeater ? row.chipRepeater.count : 0
+    drawerRow = index
+    drawerCol = row.selectedIndex >= 0 ? row.selectedIndex : Math.max(0, Math.min(drawerCol, count - 1))
+  }
+
+  function moveDrawerCursor(dx, dy) {
+    if (!drawerCursorActive) {
+      drawerCursorActive = true
+      enterDrawerRow(0)
+    } else if (dy !== 0) {
+      var next = Math.max(0, Math.min(drawerRows.length - 1, drawerRow + dy))
+      if (next !== drawerRow) enterDrawerRow(next)
+    } else {
+      var row = drawerRows[drawerRow]
+      var count = row.chipRepeater ? row.chipRepeater.count : 0
+      drawerCol = Math.max(0, Math.min(count - 1, drawerCol + dx))
+    }
+    revealDrawerChip()
+  }
+
+  function activateDrawerCursor() {
+    var chip = drawerChip()
+    if (chip) chip.clicked()
+  }
+
+  // Scroll the panel so the chip under the cursor is in view.
+  function revealDrawerChip() {
+    var chip = drawerChip()
+    var flick = scrollArea.contentItem
+    if (!chip || !flick || flick.contentY === undefined) return
+    var top = chip.mapToItem(flick.contentItem, 0, 0).y
+    var margin = Style.space(6)
+    var maxY = Math.max(0, flick.contentHeight - flick.height)
+    if (top - margin < flick.contentY) flick.contentY = Math.max(0, top - margin)
+    else if (top + chip.height + margin > flick.contentY + flick.height)
+      flick.contentY = Math.min(maxY, top + chip.height + margin - flick.height)
+  }
+
   focusTarget: keyCatcher
   contentWidth: fittedContentWidth(Style.space(500))
   contentHeight: fittedContentHeight(panelColumn.implicitHeight + Style.space(16), Style.space(1100))
@@ -130,6 +198,8 @@ KeyboardPanel {
     id: keyCatcher
     anchors.fill: parent
     onCloseRequested: root.close()
+    onMoveRequested: function(dx, dy) { if (root.settingsOpen) root.moveDrawerCursor(dx, dy) }
+    onActivateRequested: if (root.settingsOpen && root.drawerCursorActive) root.activateDrawerCursor()
     // root.owner is the Panel widget root (Widget.qml sets owner: root),
     // which is what Bar.switchPanelFrom expects.
     onTabRequested: function(direction) {
@@ -280,6 +350,7 @@ KeyboardPanel {
             }
 
             ChoiceRow {
+              id: modeRow
               label: "Mode"
               key: "mode"
               current: root.mode
@@ -293,9 +364,12 @@ KeyboardPanel {
 
             // Each chip toggles one of the bar's shown-item settings.
             SettingRow {
+              id: showRow
               label: "Show"
+              chipRepeater: showRepeater
 
               Repeater {
+                id: showRepeater
                 model: [
                   { key: "showGpu", label: "󰾲 GPU" },
                   { key: "showCpu", label: " CPU" },
@@ -307,14 +381,18 @@ KeyboardPanel {
                 ]
                 delegate: ModeChip {
                   required property var modelData
+                  required property int index
                   text: modelData.label
                   selected: root[modelData.key]
+                  hasCursor: root.drawerCursorOn(showRow.rowIndex, index)
                   onClicked: root.persistSetting(modelData.key, !root[modelData.key])
+                  onHovered: function(on) { if (on) root.setDrawerCursor(showRow.rowIndex, index) }
                 }
               }
             }
 
             ChoiceRow {
+              id: ramRow
               label: "RAM"
               key: "ramFormat"
               // "available" is an alias of "free": both show MemAvailable.
@@ -328,6 +406,7 @@ KeyboardPanel {
             }
 
             ChoiceRow {
+              id: unitRow
               label: "Unit"
               key: "fahrenheit"
               current: root.fahrenheit
@@ -338,6 +417,7 @@ KeyboardPanel {
             }
 
             ChoiceRow {
+              id: tempRow
               label: "Temp"
               key: "tempFormat"
               current: root.tempFormat
@@ -799,6 +879,11 @@ KeyboardPanel {
     id: settingRow
     property string label: ""
     default property alias chips: chipFlow.data
+    // For the drawer cursor: the Repeater that makes this row's chips, and the
+    // chip to land on when the cursor enters the row (-1 keeps the column).
+    property Repeater chipRepeater: null
+    property int selectedIndex: -1
+    readonly property int rowIndex: root.drawerRows.indexOf(settingRow)
 
     width: parent.width
     spacing: Style.space(8)
@@ -830,13 +915,20 @@ KeyboardPanel {
     property var options: []
     property var current
 
+    chipRepeater: choiceRepeater
+    selectedIndex: choiceRow.options.findIndex(function(option) { return option.value === choiceRow.current })
+
     Repeater {
+      id: choiceRepeater
       model: choiceRow.options
       delegate: ModeChip {
         required property var modelData
+        required property int index
         text: modelData.label
         selected: choiceRow.current === modelData.value
+        hasCursor: root.drawerCursorOn(choiceRow.rowIndex, index)
         onClicked: root.persistSetting(choiceRow.key, modelData.value)
+        onHovered: function(on) { if (on) root.setDrawerCursor(choiceRow.rowIndex, index) }
       }
     }
   }

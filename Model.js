@@ -229,24 +229,39 @@ function parseLoadAverage(raw) {
 // MemAvailable is the kernel's own estimate of what a new allocation can get
 // without swapping, which is what "used" should be measured against — total
 // minus free counts reclaimable page cache as used and always reads ~90%.
+// Each key is anchored at line start so Cached never matches SwapCached. No
+// `g` flag: these are shared by every widget instance, and a global regex
+// would carry lastIndex from one call into the next.
+var MEMINFO = {
+  MemTotal: /^MemTotal:\s+(\d+)/m,
+  MemAvailable: /^MemAvailable:\s+(\d+)/m,
+  MemFree: /^MemFree:\s+(\d+)/m,
+  Buffers: /^Buffers:\s+(\d+)/m,
+  Cached: /^Cached:\s+(\d+)/m,
+  SReclaimable: /^SReclaimable:\s+(\d+)/m,
+  SwapTotal: /^SwapTotal:\s+(\d+)/m,
+  SwapFree: /^SwapFree:\s+(\d+)/m
+}
+
 function parseMemory(raw) {
   var text = String(raw || "")
   function field(key) {
-    var match = text.match(new RegExp("^" + key + ":\\s+(\\d+)", "m"))
+    var match = text.match(MEMINFO[key])
     return match ? toNumber(match[1]) : 0
   }
 
   var total = field("MemTotal")
-  var available = field("MemAvailable")
   if (total <= 0) return null
-  if (available <= 0) available = field("MemFree") + field("Buffers") + field("Cached")
+  var available = field("MemAvailable")
+  var cached = field("Cached")
+  if (available <= 0) available = field("MemFree") + field("Buffers") + cached
 
   var swapTotal = field("SwapTotal")
   return {
     totalKib: total,
     availableKib: available,
     usedKib: Math.max(0, total - available),
-    cachedKib: field("Cached") + field("SReclaimable"),
+    cachedKib: cached + field("SReclaimable"),
     swapTotalKib: swapTotal,
     swapUsedKib: Math.max(0, swapTotal - field("SwapFree")),
     percent: clamp(100 * (total - available) / total, 0, 100)

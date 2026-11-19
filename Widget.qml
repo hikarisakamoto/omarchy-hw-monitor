@@ -392,21 +392,11 @@ Panel {
     hw.sample()
   }
 
-  function currentEntry() {
-    var config = root.bar && root.bar.shell ? root.bar.shell.shellConfig : null
-    var layout = config && config.bar ? config.bar.layout : null
-    var sections = ["left", "center", "right"]
-    for (var s = 0; layout && s < sections.length; s++) {
-      var entries = layout[sections[s]] || []
-      for (var i = 0; i < entries.length; i++) {
-        if (entries[i] && String(entries[i].id) === root.moduleName) return entries[i]
-      }
-    }
-    return root.settings || {}
-  }
-
+  // Save one key into this widget's shell.json entry, keeping its other keys.
+  // The host's updateEntryInline is keyed by widget id, so if the widget is
+  // placed more than once, every placement receives this instance's entry.
   function persistSetting(key, value) {
-    var live = currentEntry()
+    var live = root.settings || {}
     var entry = { id: root.moduleName }
     for (var k in live) if (k !== "id") entry[k] = live[k]
     entry[key] = value
@@ -417,13 +407,7 @@ Panel {
   }
 
   function cycleMode() {
-    var live = currentEntry()
-
-    var from = String(live.mode === undefined || live.mode === null ? mode : live.mode).trim().toLowerCase()
-    if (modes.indexOf(from) === -1) from = mode
-    var next = modes[(modes.indexOf(from) + 1) % modes.length]
-
-    persistSetting("mode", next)
+    persistSetting("mode", nextMode)
   }
 
   function toggleFahrenheit() {

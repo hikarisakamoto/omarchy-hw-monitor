@@ -5,11 +5,19 @@ in `manifest.json`; `scripts/release.sh X.Y.Z` turns the Unreleased notes below
 into a dated version entry, bumps the manifest to match, and commits and tags
 the release.
 
-Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
-`f9aa323`, 1.1.0 `8e1fd16`, 1.1.1 `7c577c0`, 1.2.0 `ff91bb8` and 1.2.1
-`c217fdb`.
+1.0.0 (2026-11-20) is the first release of `hikarisakamoto.hw-monitor`, and
+version numbers start again there. The versions marked `meviusisback.hw-monitor`
+below were released under the plugin's previous id, before this repository
+became its own project. Of those, releases up to 1.2.1 were not tagged; their
+release commits are 1.0.0 `f9aa323`, 1.1.0 `8e1fd16`, 1.1.1 `7c577c0`, 1.2.0
+`ff91bb8` and 1.2.1 `c217fdb`. 1.3.0 is tagged `v1.3.0`.
 
 ## Unreleased
+
+## 1.0.0 — 2026-11-20
+
+First release of `hikarisakamoto.hw-monitor`, this repository as its own
+project. It carries everything in the inherited 1.3.0 below, plus:
 
 ### Changed
 
@@ -29,7 +37,7 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   about 3 GiB on the RX 9070 machine, so the readout no longer matches
   `free -h` or `btop`; it reads lower than both by that amount.
 
-## 1.3.0 — 2026-11-20
+## 1.3.0 — 2026-11-20 (`meviusisback.hw-monitor`)
 
 ### Added
 
@@ -250,7 +258,7 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   `labels` default) no longer grows one digit wider below 10%, so the cells
   after it stay put as a load crosses 10%.
 
-## 1.2.1 — 2026-10-16
+## 1.2.1 — 2026-10-16 (`meviusisback.hw-monitor`)
 
 ### Fixed
 
@@ -266,7 +274,7 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 - Glyphs from settings render as plain text, and `padOpacity` and the glyph
   rotation settings appear in the settings schema.
 
-## 1.2.0 — 2026-10-10
+## 1.2.0 — 2026-10-10 (`meviusisback.hw-monitor`)
 
 ### Added
 
@@ -278,7 +286,7 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 - Bar figure cells reserve their width, so the readout no longer shifts as
   numbers change (#3).
 
-## 1.1.1 — 2026-09-29
+## 1.1.1 — 2026-09-29 (`meviusisback.hw-monitor`)
 
 ### Added
 
@@ -300,7 +308,7 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   missing temperatures in `full` mode.
 - Bar glyphs follow the theme's foreground colour.
 
-## 1.1.0 — 2026-09-01
+## 1.1.0 — 2026-09-01 (`meviusisback.hw-monitor`)
 
 ### Added
 
@@ -309,7 +317,7 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
   processor, memory and GPU details.
 - `monitors`, to draw the widget only on chosen screens.
 
-## 1.0.0 — 2026-08-18
+## 1.0.0 — 2026-08-18 (`meviusisback.hw-monitor`)
 
 - First release: memory, CPU and GPU in the Omarchy bar as `compact`, `full`
   and `labels` readouts, read from `/proc` and `/sys`.

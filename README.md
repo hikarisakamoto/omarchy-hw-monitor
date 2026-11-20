@@ -2,7 +2,7 @@
 
 Memory, CPU, and GPU in the bar, with a first-class visual system panel popup. Four readouts, cycled with a right click: sleek icon groups (Noctalia-style), gauges alone, gauges with temperatures, or the numbers spelled out.
 
-This is a personal fork, maintained for the author's own setup; see [Credits](#credits) for where it comes from.
+This is a personal fork, detached from upstream to keep it focused on the author's own needs and hardware; see [Credits](#credits) for where it comes from and why.
 
 ![The system panel, anchored under the bar readout](preview.png)
 
@@ -311,3 +311,9 @@ of [Edgar Silva's original omarchy-hw-monitor](https://github.com/edgarsilva/oma
 (MIT). meviusisback's fork added the Noctalia-style readout, the visual system
 panel, and per-widget settings. The original MIT license is preserved; the
 copyright lines in [LICENSE](LICENSE) name all three authors.
+
+This repository was detached from meviusisback's fork in November 2026, at its
+own 1.0.0 under the plugin id `hikarisakamoto.hw-monitor`, to keep it focused on
+the author's own needs and hardware: an AMD Ryzen 9 9900X with a Radeon RX 9070
+and the Radeon 610M iGPU, on two monitors. Changes from upstream are brought in
+only when they prove to be a real improvement on that machine.

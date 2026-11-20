@@ -248,6 +248,13 @@ function parseLoadAverage(raw) {
 // MemAvailable is the kernel's own estimate of what a new allocation can get
 // without swapping, which is what "used" should be measured against — total
 // minus free counts reclaimable page cache as used and always reads ~90%.
+// GPUReclaim is the DRM/TTM page pool: idle pages the GPU driver keeps for
+// reuse, which a shrinker frees under memory pressure. The kernel leaves it
+// out of MemAvailable, so it is added to available and clamped to total.
+// Checked on 7.2.15 by rebuilding si_mem_available() from /proc/vmstat and
+// /proc/zoneinfo with no GPU term: it matched MemAvailable exactly while the
+// pool held ~3 GiB. Re-run that check after a kernel update; a kernel that
+// folds the pool into MemAvailable would make this count it twice.
 // Each key is anchored at line start so Cached never matches SwapCached. No
 // `g` flag: these are shared by every widget instance, and a global regex
 // would carry lastIndex from one call into the next.
@@ -258,6 +265,7 @@ var MEMINFO = {
   Buffers: /^Buffers:\s+(\d+)/m,
   Cached: /^Cached:\s+(\d+)/m,
   SReclaimable: /^SReclaimable:\s+(\d+)/m,
+  GPUReclaim: /^GPUReclaim:\s+(\d+)/m,
   SwapTotal: /^SwapTotal:\s+(\d+)/m,
   SwapFree: /^SwapFree:\s+(\d+)/m
 }
@@ -274,6 +282,7 @@ function parseMemory(raw) {
   var available = field("MemAvailable")
   var cached = field("Cached")
   if (available <= 0) available = field("MemFree") + field("Buffers") + cached
+  available = Math.min(total, available + field("GPUReclaim"))
 
   var swapTotal = field("SwapTotal")
   return {

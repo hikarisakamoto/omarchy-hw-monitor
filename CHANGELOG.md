@@ -11,6 +11,14 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 
 ## Unreleased
 
+### Changed
+
+- Memory "available" now adds the kernel's reclaimable GPU page pool
+  (`GPUReclaim` in `/proc/meminfo`, which `MemAvailable` leaves out) and is
+  clamped to total. Used memory and its percentage drop by the pool's size,
+  about 3 GiB on the RX 9070 machine, so the readout no longer matches
+  `free -h` or `btop`; it reads lower than both by that amount.
+
 ## 1.3.0 — 2026-11-20
 
 ### Added

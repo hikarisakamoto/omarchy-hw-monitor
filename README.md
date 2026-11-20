@@ -75,7 +75,7 @@ label welded to its figure, ~330px.
 
 | | Source | Shown |
 |---|---|---|
-| Memory | `/proc/meminfo` | used against total, measured with `MemAvailable` so reclaimable page cache is not counted as used |
+| Memory | `/proc/meminfo` | used against total, measured with `MemAvailable` plus the kernel's reclaimable GPU page pool (`GPUReclaim`), so neither reclaimable page cache nor that pool counts as used; it reads lower than `free -h` and `btop` by the pool's size |
 | CPU load | `/proc/stat` | jiffie deltas between samples, `iowait` counted as idle — the same arithmetic `top` and `btop` use |
 | CPU clock | `/proc/cpuinfo` | mean across every thread |
 | CPU temperature | `hwmon` | die/package sensor, picked by scoring (`k10temp` `Tdie`/`Tctl`, `coretemp` `Package id 0`, `zenpower`, ThinkPad, ARM SoC, then `acpitz`) |
@@ -152,7 +152,7 @@ omarchy bar set meviusisback.hw-monitor fahrenheit true --json
 | `topProcCount` | int | `6` | How many rows to list (3–12, sorted by the active metric). |
 | `topProcSort` | enum | `ram` | Sort top processes by `ram` or `cpu` (switchable in the panel header). |
 | `topProcGroup` | bool | `true` | Collapse processes by application (systemd scope, name fallback) with counts, summed CPU and a RAM estimate that counts shared pages once. |
-| `ramFormat` | string | `"used/total"` | `"used/total"` (`12/23G`), `"used"` (`12.3G`), `"percent"` (`52%`), or `"free"` (`11.1G`: `MemAvailable`, what a new program can use without swapping). `"available"` is accepted as another name for `"free"`. |
+| `ramFormat` | string | `"used/total"` | `"used/total"` (`12/23G`), `"used"` (`12.3G`), `"percent"` (`52%`), or `"free"` (`11.1G`: `MemAvailable` plus the reclaimable GPU page pool, what a new program can use without swapping). `"available"` is accepted as another name for `"free"`. |
 | `tempFormat` | string | `"degree-unit"` | `"degree-unit"` (`45°C`), `"degree"` (`45°`), `"unit"` (`45C`), `"unit-lower"` (`45c`), or `"bare"` (`45`). |
 | `fahrenheit` | bool | `false` | Temperatures in °F instead of °C. |
 | `percentPad` | string | mode-dependent | `"none"` (`3%`), `"zero"` (`03%`, the zero at `padOpacity`), or `"lead"` (` 3%`). Unset, it is `"none"` in `icons` and `"zero"` in `compact`/`full`/`labels`. Figure cells always reserve their slot width, so neighbours stay put in every mode. The retired `"trail"` (and `"space"`) read as `"none"`. |

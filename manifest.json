@@ -161,7 +161,7 @@
           "free"
         ],
         "defaultValue": "used/total",
-        "description": "'used/total' (12/23G), 'used' (12.3G), 'percent' (52%), or 'free' (11.1G: MemAvailable, what a new program can use without swapping). 'available' is accepted as another name for 'free'."
+        "description": "'used/total' (12/23G), 'used' (12.3G), 'percent' (52%), or 'free' (11.1G: MemAvailable plus the reclaimable GPU page pool, what a new program can use without swapping). 'available' is accepted as another name for 'free'."
       },
       {
         "key": "tempFormat",

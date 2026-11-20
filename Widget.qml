@@ -85,8 +85,9 @@ Panel {
   // ------------------------------------------------------------ formatting
 
   readonly property bool fahrenheit: boolSetting("fahrenheit", false)
-  // "free" is MemAvailable, what a new program can get without swapping;
-  // "available" is accepted as another name for it.
+  // "free" is MemAvailable plus the reclaimable GPU page pool, what a new
+  // program can get without swapping; "available" is accepted as another
+  // name for it.
   readonly property string ramFormat: {
     var want = enumSetting("ramFormat", ["used/total", "used", "percent", "free", "available"], "used/total")
     return want === "available" ? "free" : want

@@ -410,7 +410,8 @@ KeyboardPanel {
               id: ramRow
               label: "RAM"
               key: "ramFormat"
-              // "available" is an alias of "free": both show MemAvailable.
+              // "available" is an alias of "free": both show MemAvailable plus the
+              // reclaimable GPU page pool.
               current: root.ramFormat === "available" ? "free" : root.ramFormat
               options: [
                 { value: "used/total", label: "Used/Total" },

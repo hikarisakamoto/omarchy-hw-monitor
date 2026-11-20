@@ -48,10 +48,19 @@ QtObject {
       eq(Model.cpuUsage(prev, { total: 1003, idle: 801 }, 10), -1, "cpuUsage window under minDelta")
 
       // Memory: Cached must not match SwapCached.
-      var mem = Model.parseMemory("MemTotal: 1000 kB\nMemFree: 100 kB\nMemAvailable: 400 kB\n"
-                                  + "SwapCached: 999 kB\nCached: 200 kB\nSReclaimable: 50 kB\n"
-                                  + "SwapTotal: 300 kB\nSwapFree: 100 kB\n")
+      var meminfo = "MemTotal: 1000 kB\nMemFree: 100 kB\nMemAvailable: 400 kB\n"
+                    + "SwapCached: 999 kB\nCached: 200 kB\nSReclaimable: 50 kB\n"
+                    + "SwapTotal: 300 kB\nSwapFree: 100 kB\n"
+      var mem = Model.parseMemory(meminfo)
       eq([mem.usedKib, mem.cachedKib, mem.swapUsedKib, mem.percent], [600, 250, 200, 60], "parseMemory")
+      // The GPU page pool counts as available, not as cache, and clamps to total.
+      mem = Model.parseMemory(meminfo + "GPUReclaim: 100 kB\n")
+      eq([mem.usedKib, mem.cachedKib, mem.percent, mem.availableKib], [500, 250, 50, 500],
+         "parseMemory adds GPUReclaim to available")
+      mem = Model.parseMemory(meminfo + "GPUReclaim: 5000 kB\n")
+      eq([mem.availableKib, mem.usedKib, mem.percent], [1000, 0, 0], "parseMemory clamps GPUReclaim to total")
+      mem = Model.parseMemory(meminfo + "GPUActive: 100 kB\nXGPUReclaim: 100 kB\n")
+      eq([mem.usedKib, mem.cachedKib, mem.percent], [600, 250, 60], "parseMemory GPUReclaim anchored at line start")
       eq(Model.parseMemory(""), null, "parseMemory empty")
 
       // nvidia-smi CSV.

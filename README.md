@@ -2,6 +2,8 @@
 
 Memory, CPU, and GPU in the bar, with a first-class visual system panel popup. Four readouts, cycled with a right click: sleek icon groups (Noctalia-style), gauges alone, gauges with temperatures, or the numbers spelled out.
 
+This is a personal fork, maintained for the author's own setup; see [Credits](#credits) for where it comes from.
+
 ![The system panel, anchored under the bar readout](preview.png)
 
 Bar sampling reads `/proc` and `/sys` inside the shell process via `FileView` —
@@ -12,13 +14,13 @@ on the sample interval (NVIDIA cards only — they expose no sysfs telemetry) an
 ## Install
 
 ```sh
-omarchy plugin add https://github.com/meviusisback/omarchy-hw-monitor.git --enable
+omarchy plugin add https://github.com/hikarisakamoto/omarchy-hw-monitor.git --enable
 ```
 
 Then place it where you want it and restart the shell:
 
 ```sh
-omarchy bar move meviusisback.hw-monitor --section right --after omarchy.tray
+omarchy bar move hikarisakamoto.hw-monitor --section right --after omarchy.tray
 omarchy restart shell
 ```
 
@@ -104,7 +106,7 @@ a blocking read never stalls the UI.
 Run the probe yourself to see what it found:
 
 ```sh
-~/.config/omarchy/plugins/meviusisback.hw-monitor/hw-probe | jq
+~/.config/omarchy/plugins/hikarisakamoto.hw-monitor/hw-probe | jq
 ```
 
 A sensor missing from that output is one this machine does not expose, and the
@@ -116,7 +118,7 @@ Settings are read from this widget's entry in `~/.config/omarchy/shell.json`:
 
 ```json
 {
-  "id": "meviusisback.hw-monitor",
+  "id": "hikarisakamoto.hw-monitor",
   "mode": "icons",
   "refreshIntervalSec": 2,
   "showRam": true,
@@ -135,8 +137,8 @@ Settings are read from this widget's entry in `~/.config/omarchy/shell.json`:
 Or set dynamically from the command line:
 
 ```sh
-omarchy bar set meviusisback.hw-monitor mode full
-omarchy bar set meviusisback.hw-monitor fahrenheit true --json
+omarchy bar set hikarisakamoto.hw-monitor mode full
+omarchy bar set hikarisakamoto.hw-monitor fahrenheit true --json
 ```
 
 | Key | Type | Default | Description |
@@ -197,29 +199,29 @@ Call methods through `omarchy-shell`:
 
 ```sh
 # Open the system telemetry popup
-omarchy-shell meviusisback.hw-monitor open
+omarchy-shell hikarisakamoto.hw-monitor open
 
 # Close the system panel
-omarchy-shell meviusisback.hw-monitor close
+omarchy-shell hikarisakamoto.hw-monitor close
 
 # show / hide are aliases of open / close, the stock Omarchy panel verbs
-omarchy-shell meviusisback.hw-monitor show
-omarchy-shell meviusisback.hw-monitor hide
+omarchy-shell hikarisakamoto.hw-monitor show
+omarchy-shell hikarisakamoto.hw-monitor hide
 
 # Toggle the system panel popup
-omarchy-shell meviusisback.hw-monitor toggle
+omarchy-shell hikarisakamoto.hw-monitor toggle
 
 # Toggle Celsius / Fahrenheit
-omarchy-shell meviusisback.hw-monitor toggleFahrenheit
+omarchy-shell hikarisakamoto.hw-monitor toggleFahrenheit
 
 # Cycle the display mode
-omarchy-shell meviusisback.hw-monitor cycleMode
+omarchy-shell hikarisakamoto.hw-monitor cycleMode
 
 # Force an immediate resample
-omarchy-shell meviusisback.hw-monitor refresh
+omarchy-shell hikarisakamoto.hw-monitor refresh
 
 # Dump the full multi-line telemetry breakdown
-omarchy-shell meviusisback.hw-monitor status
+omarchy-shell hikarisakamoto.hw-monitor status
 ```
 
 ## Requirements
@@ -237,7 +239,7 @@ default, which opens the built-in panel instead).
 ## Removal
 
 ```sh
-omarchy plugin remove meviusisback.hw-monitor
+omarchy plugin remove hikarisakamoto.hw-monitor
 ```
 
 That drops it from the bar and deletes the plugin. Per-widget settings live in
@@ -267,8 +269,8 @@ this from the checkout:
 
 ```sh
 plugins=~/.config/omarchy/plugins
-mv "$plugins/meviusisback.hw-monitor" "$plugins/.meviusisback.hw-monitor.orig" &&
-  ln -s "$PWD" "$plugins/meviusisback.hw-monitor"
+mv "$plugins/hikarisakamoto.hw-monitor" "$plugins/.hikarisakamoto.hw-monitor.orig" &&
+  ln -s "$PWD" "$plugins/hikarisakamoto.hw-monitor"
 ```
 
 The shell's file watcher does not follow the link, so reload after each edit:
@@ -284,7 +286,7 @@ treat your checkout as the installed plugin and try to fast-forward it from its
 
 On a machine without the plugin installed, you can install the checkout itself
 instead: `omarchy plugin add "$PWD" --enable` once, then
-`omarchy plugin update meviusisback.hw-monitor --yes` after each commit. That
+`omarchy plugin update hikarisakamoto.hw-monitor --yes` after each commit. That
 validates the new commit, rolls back one that fails, and reloads the shell.
 
 To cut a release, list the changes under Unreleased in
@@ -299,13 +301,13 @@ open a coding agent in the plugin folder and trust it, or run `bd` there.
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Original work by Edgar Silva; continued and
-extended by meviusisback.
+MIT — see [LICENSE](LICENSE). Original work by Edgar Silva, extended by
+meviusisback, and maintained here by Hikari Sakamoto.
 
 ## Credits
 
-Based on [Edgar Silva's omarchy-hw-monitor](https://github.com/edgarsilva/omarchy-hw-monitor)
-(MIT). This fork continues the plugin — the original repository has been
-inactive since August 2026 — with the Noctalia-style readout, the visual
-system panel, and per-widget settings. The original MIT license is preserved;
-copyright lines in [LICENSE](LICENSE) reflect both authors.
+Based on [meviusisback's fork](https://github.com/meviusisback/omarchy-hw-monitor)
+of [Edgar Silva's original omarchy-hw-monitor](https://github.com/edgarsilva/omarchy-hw-monitor)
+(MIT). meviusisback's fork added the Noctalia-style readout, the visual system
+panel, and per-widget settings. The original MIT license is preserved; the
+copyright lines in [LICENSE](LICENSE) name all three authors.

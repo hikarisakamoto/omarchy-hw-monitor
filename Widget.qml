@@ -12,7 +12,7 @@ import "Model.js" as Model
 // Right click walks the display modes and remembers the choice; middle click resamples.
 Panel {
   id: root
-  moduleName: "meviusisback.hw-monitor"
+  moduleName: "hikarisakamoto.hw-monitor"
   // The host replaces moduleName with the entry id at load, so IPC answers on
   // whatever id the manifest declares. The base handler is off because the
   // IpcHandler below adds methods of its own.

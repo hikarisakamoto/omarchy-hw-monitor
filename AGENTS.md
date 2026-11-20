@@ -60,6 +60,13 @@ scripts/check.sh   # manifest validation, defaults vs schema, syntax of every fi
 The README's Development section has the loop for trying a change in your own
 bar.
 
+## Conventions & Patterns
+
+- This is a personal project. Work targets only the maintainer's setup: an
+  AMD Ryzen 9 9900X, a Radeon RX 9070 plus the Radeon 610M iGPU, two
+  monitors, on Omarchy. Upstream changes (meviusisback, edgarsilva) are
+  ported only when verified as real improvements on this machine.
+
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:46cd31e7 -->
 ## Beads Issue Tracker
 

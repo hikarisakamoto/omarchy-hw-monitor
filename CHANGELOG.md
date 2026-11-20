@@ -13,6 +13,16 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 
 ### Changed
 
+- The plugin id is now `hikarisakamoto.hw-monitor`, and the repository is
+  https://github.com/hikarisakamoto/omarchy-hw-monitor. To move an existing
+  install to the new id:
+  1. Rename the plugin folder:
+     `mv ~/.config/omarchy/plugins/meviusisback.hw-monitor ~/.config/omarchy/plugins/hikarisakamoto.hw-monitor`
+  2. In `~/.config/omarchy/shell.json`, change the bar entry's `"id"` from
+     `"meviusisback.hw-monitor"` to `"hikarisakamoto.hw-monitor"` (every
+     entry, if the widget is placed more than once). Its settings stay as
+     they are.
+  3. Rescan plugins: `omarchy-shell shell rescanPlugins`.
 - Memory "available" now adds the kernel's reclaimable GPU page pool
   (`GPUReclaim` in `/proc/meminfo`, which `MemAvailable` leaves out) and is
   clamped to total. Used memory and its percentage drop by the pool's size,

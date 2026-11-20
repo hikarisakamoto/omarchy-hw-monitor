@@ -93,6 +93,10 @@ step.
 
 ## Conventions & Patterns
 
+- This is a personal project. Work targets only the maintainer's setup: an
+  AMD Ryzen 9 9900X, a Radeon RX 9070 plus the Radeon 610M iGPU, two
+  monitors, on Omarchy. Upstream changes (meviusisback, edgarsilva) are
+  ported only when verified as real improvements on this machine.
 - Every tracked file ships to users: `omarchy plugin add` installs with
   `git clone` and `omarchy plugin update` fast-forwards.
 - A user-visible change gets an entry under `## Unreleased` in `CHANGELOG.md`;

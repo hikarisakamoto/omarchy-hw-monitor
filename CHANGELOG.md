@@ -11,6 +11,8 @@ Releases up to 1.2.1 were not tagged. Their release commits are 1.0.0
 
 ## Unreleased
 
+## 1.3.0 — 2026-11-20
+
 ### Added
 
 - `scripts/check.sh`, a pre-push check (manifest validation, manifest defaults
